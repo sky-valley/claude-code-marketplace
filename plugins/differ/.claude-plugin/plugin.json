@@ -5,8 +5,5 @@
   "author": {
     "name": "Sky Valley Ambient Computing",
     "email": "founders@skyvalley.ac"
-  },
-  "hooks": {
-    "source": "./hooks/hooks.json"
   }
 }
