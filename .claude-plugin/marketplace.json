@@ -2,7 +2,7 @@
   "name": "skyvalley-marketplace",
   "owner": {
     "name": "Sky Valley Ambient Computing",
-    "email": "founder@skyvalley.ac"
+    "email": "founders@skyvalley.ac"
   },
   "metadata": {
     "description": "Sky Valley Ambient Computing plugins for Claude Code",
@@ -16,7 +16,7 @@
       "version": "2.0.0",
       "author": {
         "name": "Sky Valley Ambient Computing",
-        "email": "founder@skyvalley.ac"
+        "email": "founders@skyvalley.ac"
       }
     }
   ]
