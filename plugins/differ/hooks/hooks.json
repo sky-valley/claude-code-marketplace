@@ -1,0 +1,105 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "differ-capture-pre-tool",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "differ-capture-post-tool",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "name": "differ-capture-prompt",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "name": "differ-capture-stop",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "name": "differ-capture-subagent-stop",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "name": "differ-capture-session-start",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "name": "differ-capture-session-end",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "name": "differ-capture-pre-compact",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "name": "differ-capture-notification",
+            "type": "command",
+            "command": "$CLAUDE_PLUGIN_ROOT/scripts/send_to_differ.py"
+          }
+        ]
+      }
+    ]
+  }
+}

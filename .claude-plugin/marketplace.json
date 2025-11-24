@@ -1,0 +1,20 @@
+{
+  "name": "skyvalley-marketplace",
+  "owner": {
+    "name": "Sky Valley Ambient Computing",
+    "email": "founder@skyvalley.ac"
+  },
+  "metadata": {
+    "description": "Sky Valley Ambient Computing plugins for Claude Code",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "differ",
+      "source": "./plugins/differ",
+      "description": "Capture Claude Code intent data and send to Differ.app for correlation with file changes",
+      "version": "2.0.0",
+      "author": "Sky Valley Ambient Computing"
+    }
+  ]
+}
