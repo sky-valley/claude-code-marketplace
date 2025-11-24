@@ -6,7 +6,7 @@ A collection of Claude Code plugins developed by Sky Valley Ambient Computing.
 
 ### Differ
 
-Captures Claude Code intent data (prompts, tool usage, session lifecycle) and sends it to [Differ.app](https://differ.app) for correlation with file changes.
+Captures Claude Code intent data (prompts, tool usage, session lifecycle) and sends it to [Differ.app](https://getdiffer.com) for correlation with file changes.
 
 **Features:**
 - Captures all hook events (tool usage, user prompts, session lifecycle)
@@ -33,7 +33,7 @@ Captures Claude Code intent data (prompts, tool usage, session lifecycle) and se
 ### Prerequisites
 
 The Differ plugin requires:
-- [Differ.app](https://differ.app) running on your system
+- [Differ.app](https://getdiffer.com) running on your system
 - Python 3 (comes with macOS)
 - `differ-cli` binary accessible (automatically detected)
 
@@ -76,6 +76,4 @@ MIT License - see individual plugin directories for details.
 
 ## Support
 
-For issues or questions:
-- Open an issue on [GitHub](https://github.com/sky-valley/claude-code-marketplace/issues)
-- Email: founder@skyvalley.ac
+For issues or questions, open an issue on [GitHub](https://github.com/sky-valley/claude-code-marketplace/issues).
