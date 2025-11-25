@@ -49,6 +49,26 @@ You should see "differ" in the list of installed plugins.
 
 ## Usage
 
+### Query Your History with `/differ`
+
+The plugin includes a slash command that lets you query your coding history using natural language:
+
+```bash
+/differ what sessions did I have today?
+/differ what files did I change in my last session?
+/differ show me the prompts that led to changes in Database.swift
+/differ what tools were used yesterday?
+/differ show me the previous version of AppCoordinator.swift
+```
+
+The command has full access to:
+- **Session data** - When sessions started/ended, which branch
+- **File changes** - What files were created/modified/deleted and when
+- **User prompts** - Every prompt you submitted
+- **Tool usage** - What tools Claude used and their results
+- **File snapshots** - Previous versions of files (stored as blobs)
+- **Transcripts** - Full conversation history
+
 ### Automatic Capture
 
 Once installed, the plugin works automatically. No configuration needed.
@@ -283,4 +303,4 @@ For issues or questions:
 ---
 
 **Status**: This plugin is part of Differ 2.0 and is actively developed.
-**Last Updated**: 2025-11-16
+**Last Updated**: 2025-11-25

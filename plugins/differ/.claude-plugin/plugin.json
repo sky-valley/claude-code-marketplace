@@ -1,9 +1,10 @@
 {
   "name": "differ",
-  "version": "2.0.0",
-  "description": "Capture Claude Code intent data and send to Differ.app for correlation with file changes",
+  "version": "2.1.0",
+  "description": "Capture Claude Code intent data and query coding session history via Differ.app",
   "author": {
     "name": "Sky Valley Ambient Computing",
     "email": "founders@skyvalley.ac"
-  }
+  },
+  "commands": "./commands"
 }
