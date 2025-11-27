@@ -18,6 +18,25 @@ MAX_ROLLED_FILES = 10
 FAILED_EVENTS_FILENAME = "failed-events.jsonl"
 
 
+def get_plugin_version() -> str:
+    """
+    Read plugin version from plugin.json.
+
+    Returns:
+        Plugin semantic version string, or "unknown" if not found
+    """
+    try:
+        script_dir = Path(__file__).parent
+        plugin_json = script_dir.parent / ".claude-plugin" / "plugin.json"
+        if plugin_json.is_file():
+            with open(plugin_json) as f:
+                data = json.load(f)
+                return data.get("version", "unknown")
+    except Exception:
+        pass
+    return "unknown"
+
+
 def find_differ_cli() -> Optional[str]:
     """
     Find differ-cli binary in common installation locations.
@@ -117,6 +136,7 @@ def build_payload(hook_input: Dict[str, Any]) -> Dict[str, Any]:
     # Base payload with common fields
     payload = {
         "version": "1.0.0",
+        "plugin_version": get_plugin_version(),
         "session_id": hook_input.get("session_id", "unknown"),
         "hook_event_name": hook_event,
         "timestamp": time.time(),

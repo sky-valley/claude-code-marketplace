@@ -13,7 +13,7 @@
       "name": "differ",
       "source": "./plugins/differ",
       "description": "Capture Claude Code intent data and query coding session history via Differ.app",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "author": {
         "name": "Sky Valley Ambient Computing",
         "email": "founders@skyvalley.ac"
