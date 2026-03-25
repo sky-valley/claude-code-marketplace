@@ -279,6 +279,43 @@ class PromiseRuntimeSession:
             self.save_json_artifact(artifact_filename, message)
         return message
 
+    def post_and_confirm(
+        self,
+        message: JsonDict,
+        *,
+        step: Optional[str] = None,
+        artifact_filename: Optional[str] = None,
+        confirm_space_id: Optional[str] = None,
+        timeout: float = 5.0,
+        poll_interval: float = 0.25,
+    ) -> JsonDict:
+        posted = self.post(message, step=step, artifact_filename=artifact_filename)
+        message_id = posted.get("intentId") or posted.get("promiseId")
+        if not isinstance(message_id, str) or not message_id:
+            raise ValueError("post_and_confirm requires an intentId or promiseId on the message")
+        space_id = confirm_space_id or posted.get("parentId")
+        if not isinstance(space_id, str) or not space_id:
+            raise ValueError("post_and_confirm requires a confirmable space id")
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            scan_result = self.scan(space_id)
+            for candidate in scan_result.get("messages", []):
+                if (
+                    candidate.get("intentId") == message_id
+                    or candidate.get("promiseId") == message_id
+                ):
+                    self.record_step(
+                        "post_and_confirm.confirmed",
+                        {
+                            "spaceId": space_id,
+                            "messageId": message_id,
+                            "messageType": candidate.get("type"),
+                        },
+                    )
+                    return candidate
+            time.sleep(poll_interval)
+        raise TimeoutError(f"{message_id} not found in {space_id} after {timeout} seconds")
+
     def scan(self, space_id: str) -> JsonDict:
         scan_result = self.client.scan(space_id)
         self.record_step(

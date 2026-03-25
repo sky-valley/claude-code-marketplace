@@ -48,7 +48,7 @@ def stable_json(value: Any) -> str:
         return "{" + ",".join(items) + "}"
     if isinstance(value, list):
         return "[" + ",".join(stable_json(item) for item in value) + "]"
-    return json.dumps(value, ensure_ascii=True, separators=(",", ":"))
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
 def canonical_request(value: Any) -> str:
