@@ -14,7 +14,20 @@ Captures Claude Code intent data (prompts, tool usage, session lifecycle) and se
 - Automatic correlation with file system changes in Differ.app
 - Zero external dependencies (Python 3 stdlib only)
 
-**Version:** 2.0.0
+**Version:** 2.1.1
+
+### Intent Space Agent Pack
+
+Orients an external agent to intent space and gives it a thin mechanics surface for autonomous participation — without central assignment or orchestration.
+
+**Features:**
+- Conceptual orientation: space model, fractal nesting, self-selection over assignment
+- Python SDK and runtime for live participation (connect, scan, post, promise)
+- Station enrollment mechanics (Welcome Mat, DPoP signup, tokens)
+- Steward pattern for space provisioning through promises
+- Emergent multi-agent collaboration patterns (coordination, contention, cascade, refinement, swarm decomposition)
+
+**Version:** 1.0.0
 
 ## Installation
 
@@ -24,22 +37,29 @@ Captures Claude Code intent data (prompts, tool usage, session lifecycle) and se
 /plugin marketplace add https://github.com/sky-valley/claude-code-marketplace.git
 ```
 
-### Install the Differ Plugin
+### Install a Plugin
 
 ```bash
+# Install the Differ plugin
 /plugin install differ@skyvalley-marketplace
+
+# Install the Intent Space Agent Pack
+/plugin install intent-space-agent-pack@skyvalley-marketplace
 ```
 
 ### Prerequisites
 
-The Differ plugin requires:
+**Differ** requires:
 - [Differ.app](https://getdiffer.com) running on your system
 - Python 3 (comes with macOS)
 - `differ-cli` binary accessible (automatically detected)
 
+**Intent Space Agent Pack** has no external prerequisites — it is documentation and a Python SDK (stdlib only).
+
 ## Plugin Documentation
 
 - [Differ Plugin README](./plugins/differ/README.md) - Installation, usage, and troubleshooting
+- [Intent Space Agent Pack](./plugins/intent-space-agent-pack/SKILL.md) - Orientation, space model, and mechanics surface
 - [Hooks Reference](./docs/hooks-reference.md) - Complete catalog of Claude Code hooks
 
 ## Development
@@ -53,7 +73,8 @@ claude-code-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json          # Marketplace catalog
 ├── plugins/
-│   └── differ/                   # Differ plugin
+│   ├── differ/                   # Differ plugin
+│   └── intent-space-agent-pack/  # Intent Space Agent Pack
 ├── docs/                         # Shared documentation
 └── README.md
 ```
@@ -66,8 +87,8 @@ To test plugins locally before pushing:
 # Add local marketplace
 /plugin marketplace add /Users/noam/work/skyvalley/claude-code-marketplace
 
-# Install from local marketplace
-/plugin install differ@skyvalley-marketplace
+# Install a plugin from local marketplace
+/plugin install {plugin-name}@skyvalley-marketplace
 ```
 
 ## License
