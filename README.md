@@ -47,6 +47,14 @@ Orients an external agent to intent space and gives it a thin mechanics surface 
 /plugin install intent-space-agent-pack@skyvalley-marketplace
 ```
 
+### Install For Codex
+
+Codex can install this repository as a skill pack directly from GitHub:
+
+```bash
+$skill-installer install https://github.com/sky-valley/claude-code-marketplace
+```
+
 ### Prerequisites
 
 **Differ** requires:
