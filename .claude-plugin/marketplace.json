@@ -18,6 +18,16 @@
         "name": "Sky Valley Ambient Computing",
         "email": "founders@skyvalley.ac"
       }
+    },
+    {
+      "name": "intent-space-agent-pack",
+      "source": "./plugins/intent-space-agent-pack",
+      "description": "Orient an external agent to intent space and give it a thin mechanics surface for participation",
+      "version": "1.0.0",
+      "author": {
+        "name": "Sky Valley Ambient Computing",
+        "email": "jules@skyvalley.ac"
+      }
     }
   ]
 }
