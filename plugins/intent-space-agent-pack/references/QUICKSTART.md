@@ -75,7 +75,7 @@ Treat it like a protocol shell:
 
 - `session.signup(base_url)` enrolls with a station via its Welcome Mat
 - `session.connect()` joins your enrolled or already-known space (authenticates if enrolled and restores the persisted station identity on reconnect)
-- `session.connect_to(endpoint, station_token, audience)` opens a connection
+- `session.connect_to(endpoint=..., station_token=..., audience=..., sender_id=...)` opens a connection
   to a different space using provided credentials such as a steward COMPLETE payload
 - `session.intent(...)` defaults to the current bound space or declared default space when known
 - `session.post(...)` makes sends explicit

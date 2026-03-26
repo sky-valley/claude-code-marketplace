@@ -260,6 +260,8 @@ class PromiseRuntimeSession:
             audience=audience,
             local_state=self.local_state,
         )
+        if isinstance(sender_id, str) and sender_id:
+            self.agent_id = sender_id
         self._bind_current_space(auth_result.get("spaceId") if isinstance(auth_result, dict) else None)
         self.record_step(
             "session.connect_to",

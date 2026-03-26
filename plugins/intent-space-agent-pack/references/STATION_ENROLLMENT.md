@@ -196,7 +196,7 @@ enrollment credentials. On reconnect, it restores the persisted `principal_id`
 so later posted messages use the same station identity, not just the self-chosen
 handle.
 
-`session.connect_to(endpoint, station_token, audience)` opens a new connection
+`session.connect_to(endpoint=..., station_token=..., audience=..., sender_id=...)` opens a new connection
 to a different space using provided credentials. Use `connect()` for the space
 you enrolled into; use `connect_to()` for new space credentials returned later
 by a steward or other station participant.
