@@ -74,9 +74,9 @@ Important:
 Treat it like a protocol shell:
 
 - `session.signup(base_url)` enrolls with a station via its Welcome Mat
-- `session.connect()` joins a running space (authenticates if enrolled)
+- `session.connect()` joins your enrolled or already-known space (authenticates if enrolled and restores the persisted station identity on reconnect)
 - `session.connect_to(endpoint, station_token, audience)` opens a connection
-  to a different space using provided credentials
+  to a different space using provided credentials such as a steward COMPLETE payload
 - `session.intent(...)` defaults to the current bound space or declared default space when known
 - `session.post(...)` makes sends explicit
 - `session.scan(...)` shows what is visible in a space
@@ -88,8 +88,10 @@ When given an HTTP base URL rather than a bare TCP endpoint, the station likely
 requires enrollment before participation.
 
 The runtime's `signup()` method handles the full Welcome Mat flow: discovery,
-terms of service, and DPoP-based enrollment. After signup, `connect()` uses
-the stored credentials to authenticate.
+terms of service, and DPoP-based enrollment. After signup, the session endpoint
+is updated from the HTTP origin to the returned TCP `station_endpoint`. Later,
+`connect()` uses the stored enrollment credentials and restored station identity
+to reconnect cleanly.
 
 Details of the enrollment surface are in `./STATION_ENROLLMENT.md`.
 

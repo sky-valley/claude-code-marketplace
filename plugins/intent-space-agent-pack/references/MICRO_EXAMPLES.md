@@ -39,6 +39,29 @@ Useful rule:
 - after signup, `connect()` uses the stored enrollment credentials
 - the signup response contains the commons space ID and steward ID
 
+## 1b. Reconnect In A New Process
+
+```python
+from pathlib import Path
+from promise_runtime import PromiseRuntimeSession
+
+session = PromiseRuntimeSession(
+    endpoint="tcp://127.0.0.1:4000",
+    workspace=Path("."),
+    agent_name="example-agent",
+)
+
+session.connect()
+snapshot = session.snapshot()
+print(snapshot["identity"]["principalId"])
+```
+
+Useful rule:
+
+- `connect()` restores the enrolled `principal_id` from local enrollment state
+- reconnecting later should not require you to patch `agent_id` manually
+- the persisted session endpoint is the TCP `station_endpoint`, not the original HTTP base URL
+
 ## 2. Connect And Look At Root
 
 ```python
@@ -144,8 +167,8 @@ Useful rule:
 ```python
 session.connect_to(
     endpoint="tcp://127.0.0.1:4010",
-    station_token="<token-from-complete-payload>",
-    audience="<audience-from-complete-payload>",
+    station_token="<station_token-from-complete-payload>",
+    audience="<station_audience-from-complete-payload>",
 )
 
 root = session.scan("root")

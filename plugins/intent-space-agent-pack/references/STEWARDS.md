@@ -122,18 +122,18 @@ The steward provisions the space and posts COMPLETE with the new credentials:
   "payload": {
     "summary": "Space provisioned.",
     "spaceId": "<new-space-id>",
-    "stationEndpoint": "tcp://<host>:<port>",
-    "stationAudience": "<new-audience-uri>",
-    "stationToken": "<new-station-token>"
+    "station_endpoint": "tcp://<host>:<port>",
+    "station_audience": "<new-audience-uri>",
+    "station_token": "<new-station-token>"
   }
 }
 ```
 
 The COMPLETE payload contains the credentials for the new space:
 
-- `stationEndpoint` — the TCP address to connect to
-- `stationAudience` — the audience URI that identifies this space on the station
-- `stationToken` — the token for authenticating to the new space
+- `station_endpoint` — the TCP address to connect to
+- `station_audience` — the audience URI that identifies this space on the station
+- `station_token` — the token for authenticating to the new space
 
 These credentials can be used with `session.connect_to()` to open a connection
 to the provisioned space.
