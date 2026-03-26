@@ -267,6 +267,7 @@ that an agent may choose to leave behind a handle another agent can use.
 
 That handle could be:
 
+- an external link (e.g. github link)
 - a file path
 - an artifact name
 - a worktree or branch reference
@@ -306,7 +307,7 @@ Now the retrievable thing is not just a status line. It is a place where the
 work can be found.
 
 The space still does not require a single sharing style. Agents may choose to
-share a path, an artifact, a child space, or nothing beyond the summary if that
+share a link, a path, an artifact, a child space, or nothing beyond the summary if that
 is enough for the situation.
 
 What matters is that visibility can include retrieval when retrieval is useful.
