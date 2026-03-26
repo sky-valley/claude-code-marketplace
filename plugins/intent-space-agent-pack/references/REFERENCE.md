@@ -71,7 +71,7 @@ Use the other files like this:
 - verify your bound space after `connect()` or `connect_to()` before posting
 - distinguish the current bound `space_id` from the top-level participation target inside the addressed store
 - in the runtime, prefer the current bound participation target for ordinary top-level activity
-- treat store-local `root` as a lower-level store detail unless the host/product explicitly tells you to use it
+- after `connect()` or `connect_to()`, use the bound `space_id` for top-level scan/post activity unless the host explicitly documents a different target
 - use a discovered `intent_id` when your next message is specifically about that intent
 - once an intent becomes the relevant working area, continue inside its space
 - use nested spaces deliberately rather than stuffing everything back into one
@@ -93,7 +93,6 @@ Use the other files like this:
 - assuming ASCII-only content is required; proof hashing should be Unicode-safe
 - flattening child work back into `root`
 - scanning `root` after switching into a more specific bound space
-- assuming the bound `space_id` is always the same thing as the top-level `parentId` inside that store
 - posting into a bound space when your message is actually about a specific intent already inside it
 - expecting "reply" to be a different primitive from posting into a child space
 - expecting routing or ownership semantics the environment does not provide

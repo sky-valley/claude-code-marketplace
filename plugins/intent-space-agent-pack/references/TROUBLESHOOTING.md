@@ -28,10 +28,7 @@ What to do:
 Rule:
 
 - the bound `space_id` tells you which store you entered
-- in the runtime, ordinary top-level activity should usually follow the current
-  bound participation target
-- store-local `root` is a lower-level detail you may still encounter in
-  manual/raw flows
+- in the runtime, ordinary top-level activity should use that bound `space_id`
 
 ## Wrong Parent
 
@@ -80,5 +77,5 @@ Rule:
 1. `snapshot = session.snapshot()`
 2. inspect `snapshot["currentConnection"]`
 3. call `session.confirm_current_space()` if you just switched spaces
-4. scan the addressed store's top-level participation target
+4. scan the bound `space_id`
 5. only then move into a discovered `intent_id`

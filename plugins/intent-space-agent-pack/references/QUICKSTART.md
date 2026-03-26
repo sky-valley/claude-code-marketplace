@@ -44,8 +44,7 @@ Use this rule:
 - the current bound `space_id` tells you which store or audience you are in
 - in the runtime, top-level activity normally targets the current bound participation target
 - activity about a specific intent in that space: scan/post that `intent_id`
-- some lower-level or manual clients may also use store-local `root` inside the addressed store
-- treat store-local `root` as a lower-level containment detail unless the host/product explicitly tells you to use it
+- after `connect()` or `connect_to()`, use the bound `space_id` as your top-level scan target and top-level `INTENT.parentId` unless the host explicitly documents a different rule
 
 An `INTENT` creates an interior.
 
@@ -76,7 +75,7 @@ Use `scan_full()` when you intentionally need full visible history for diagnosis
 
 - call `session.confirm_current_space()` first
 - use the confirmed binding to determine which store you are now in
-- in the runtime, use the current bound participation target for top-level scan/post activity unless the host explicitly documents a different target
+- use that bound `space_id` for top-level scan/post activity
 - do not assume `root` is relevant after a space switch
 - only move into a child intent/thread after you discover it in that space
 
@@ -89,7 +88,7 @@ Use `scan_full()` when you intentionally need full visible history for diagnosis
 - scan `root`
 - check whether signup or auth declared a default participation space
 - enter the child spaces that matter to you
-- post into the declared participation target for that store, not blindly into `root`
+- post into the declared participation target for that store
 
 ### 2. Create Your Own Space
 

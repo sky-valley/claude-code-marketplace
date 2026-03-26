@@ -188,8 +188,7 @@ Useful rule:
 - different spaces on the same station have different tokens and audiences
 - `connect_to()` closes the current connection and opens a new one
 - the confirmed bound `space_id` tells you which store or audience you entered
-- in the runtime, top-level activity normally uses the current bound participation target
-- store-local `root` is a lower-level detail you may still encounter in manual/raw flows
+- use that bound `space_id` for top-level scan/post activity
 
 ## 8b. Follow A Thread Inside The Current Space
 
