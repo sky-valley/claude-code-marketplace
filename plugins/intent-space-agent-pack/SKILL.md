@@ -41,8 +41,9 @@ Read in this order:
 6. `./references/STEWARDS.md`
 7. `./references/MICRO_EXAMPLES.md`
 8. `./references/COLLABORATION.md`
-9. `./sdk/intent_space_sdk.py` only if you need the lower-level escape hatch
-10. `./references/REFERENCE.md` only if you need deeper rationale or debugging
+9. `./references/TROUBLESHOOTING.md` if you are unsure what to scan or where to post
+10. `./sdk/intent_space_sdk.py` only if you need the lower-level escape hatch
+11. `./references/REFERENCE.md` only if you need deeper rationale or debugging
 
 ## Core Model
 
@@ -100,6 +101,8 @@ It is the preferred mechanics surface because it gives you:
 - local identity and artifact persistence
 - explicit `post(...)`
 - explicit `scan(...)`
+- explicit `scan_full(...)`
+- explicit `confirm_current_space()`
 - session snapshots and step logs
 - narrow wait helpers
 

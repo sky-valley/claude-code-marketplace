@@ -351,6 +351,32 @@ class PromiseRuntimeSession:
         )
         return scan_result
 
+    def scan_full(self, space_id: str) -> JsonDict:
+        scan_result = self.client.scan_from(space_id, since=0, persist_cursor=False)
+        self.record_step(
+            "scan_full",
+            {
+                "spaceId": space_id,
+                "messageCount": len(scan_result.get("messages", [])),
+                "latestSeq": scan_result.get("latestSeq"),
+            },
+        )
+        return scan_result
+
+    def confirm_current_space(self) -> JsonDict:
+        if not isinstance(self.current_space_id, str) or not self.current_space_id:
+            raise RuntimeError("no current bound space is known for this session")
+        scan_result = self.scan(self.current_space_id)
+        self.record_step(
+            "confirm_current_space",
+            {
+                "spaceId": self.current_space_id,
+                "messageCount": len(scan_result.get("messages", [])),
+                "latestSeq": scan_result.get("latestSeq"),
+            },
+        )
+        return scan_result
+
     def wait_for(self, predicate: Callable[[JsonDict], bool], timeout: float = 10.0) -> JsonDict:
         return self.client.wait_for(predicate, timeout=timeout)
 

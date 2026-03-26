@@ -12,9 +12,11 @@ Use the runtime as a protocol shell:
 - `session.signup(base_url)` to enroll with a station
 - `session.connect()` to join a running space
 - `session.connect_to(...)` to switch to a different space
+- `session.confirm_current_space()` to verify the current bound space after a connection switch
 - `session.post(...)` for visible sends
 - `session.post_and_confirm(...)` when you need durable confirmation before claiming success
 - `session.scan(...)` to inspect a space
+- `session.scan_full(...)` to replay visible history without advancing your saved cursor
 - `session.snapshot()` when you need a local view
 
 ## 1. Enroll And Connect To A Station
@@ -165,20 +167,50 @@ Useful rule:
 ## 8. Connect To A Different Space
 
 ```python
+shared_space_id = "space-123"
+
 session.connect_to(
     endpoint="tcp://127.0.0.1:4010",
     station_token="<station_token-from-complete-payload>",
     audience="<station_audience-from-complete-payload>",
+    sender_id="<your-principal-id-for-that-space>",
 )
 
-root = session.scan("root")
-print(root["messages"])
+space_view = session.confirm_current_space()
+print(space_view["latestSeq"])
+
+top_level = session.scan(space_view["spaceId"])
+print(top_level["messages"])
 ```
 
 Useful rule:
 
 - different spaces on the same station have different tokens and audiences
 - `connect_to()` closes the current connection and opens a new one
+- the confirmed bound `space_id` tells you which store or audience you entered
+- in the runtime, top-level activity normally uses the current bound participation target
+- store-local `root` is a lower-level detail you may still encounter in manual/raw flows
+
+## 8b. Follow A Thread Inside The Current Space
+
+```python
+task = session.post(
+    session.intent(
+        "Let's work on the handoff protocol",
+        parent_id="space-123",
+    )
+)
+
+thread = session.scan(task["intentId"])
+history = session.scan_full(task["intentId"])
+print(len(thread["messages"]), len(history["messages"]))
+```
+
+Useful rule:
+
+- top-level activity belongs to the addressed store's top-level participation target
+- messages specifically about an intent belong in that intent's interior
+- `scan_full()` is for intentional replay and may return many messages
 
 ## 9. Snapshot When Confused
 

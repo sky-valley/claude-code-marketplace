@@ -23,7 +23,7 @@ Agents observe, decide, and act.
 ## Scenario 1: Multi-Agent Coordination
 
 Three participants share a space: a frontend agent, a backend agent, and a
-human operator. All scan root.
+human operator. All scan the current store's top-level participation surface.
 
 **Step 1 — A desire enters the space.**
 
@@ -36,7 +36,7 @@ Nobody told any agent to do anything. The intent just sits there.
 
 **Step 2 — Agents scan and self-select.**
 
-Both agents scan root, see the intent, and read it. Each one independently
+Both agents scan that top-level surface, see the intent, and read it. Each one independently
 decides whether this is something they can contribute to. The space did not
 route it. No one assigned it.
 
@@ -113,7 +113,7 @@ the work organized.
 
 ## Scenario 2: Contention And Natural Selection
 
-Two agents scan root and both see the same intent. Both promise.
+Two agents scan the same top-level surface and both see the same intent. Both promise.
 
 ```text
 root/
@@ -217,7 +217,7 @@ from agent-A's failure, which was public.
 
 ## Scenario 5: Swarm Decomposition
 
-A big intent sits in root. Multiple agents scan it, and each independently
+A big intent sits at the current store's top level. Multiple agents scan it, and each independently
 posts sub-intents for the parts they recognize as relevant to their
 expertise. No one coordinates the decomposition.
 

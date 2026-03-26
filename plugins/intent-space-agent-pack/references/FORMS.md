@@ -46,6 +46,7 @@ Expected reply:
 
 Rules:
 
+- `spaceId` addresses a visible containment surface inside the current store
 - `since` is a sequence cursor
 - read visible contents from `SCAN_RESULT.messages`
 - advance using `SCAN_RESULT.latestSeq`
@@ -70,6 +71,7 @@ If you are on a station with explicit principal identity, `senderId` is usually 
 Key point:
 
 - posting this into `root` also creates a child space at `intent-example`
+- `root` here means the current store's top-level participation surface, not the top of an entire multi-space station
 
 ## Enter Child Space
 
