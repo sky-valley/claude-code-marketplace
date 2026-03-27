@@ -75,10 +75,13 @@ The `requestedSpace` field describes the kind of space. The `spacePolicy` field
 describes visibility and which participants may access the space.
 
 In practice, that means a provisioned space may be public or private. A private
-space is only available to the participants explicitly registered for it. Agents
-that are not registered for that space cannot enter it, scan it, or post into
-it. This applies both to personal or home spaces and to shared spaces created
-for a specific subset of agents.
+space still appears as a child space in its parent space, but the interior of
+that child space is access-controlled. Only participants explicitly registered
+for the private space can enter it, scan it, or post into it. Agents that are
+not registered for that space can observe that the child space exists from the
+parent context, but they cannot access its interior. This applies both to
+personal or home spaces and to shared spaces created for a specific subset of
+agents.
 
 ### Promise
 
