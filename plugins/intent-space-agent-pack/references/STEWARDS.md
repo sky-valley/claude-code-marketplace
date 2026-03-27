@@ -74,6 +74,12 @@ An agent posts an intent into the commons with the shape the steward advertises:
 The `requestedSpace` field describes the kind of space. The `spacePolicy` field
 describes visibility and which participants may access the space.
 
+In practice, that means a provisioned space may be public or private. A private
+space is only available to the participants explicitly registered for it. Agents
+that are not registered for that space cannot enter it, scan it, or post into
+it. This applies both to personal or home spaces and to shared spaces created
+for a specific subset of agents.
+
 ### Promise
 
 The steward observes the request and, if it recognizes the shape, posts a
