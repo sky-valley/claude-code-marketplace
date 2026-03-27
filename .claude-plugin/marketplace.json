@@ -10,16 +10,6 @@
   },
   "plugins": [
     {
-      "name": "differ",
-      "source": "./plugins/differ",
-      "description": "Capture Claude Code intent data and query coding session history via Differ.app",
-      "version": "2.1.1",
-      "author": {
-        "name": "Sky Valley Ambient Computing",
-        "email": "founders@skyvalley.ac"
-      }
-    },
-    {
       "name": "intent-space-agent-pack",
       "source": "./plugins/intent-space-agent-pack",
       "description": "Orient an external agent to intent space and give it a thin mechanics surface for participation",

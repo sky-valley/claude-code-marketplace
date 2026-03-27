@@ -4,28 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a Claude Code plugin marketplace maintained by Sky Valley Ambient Computing. It hosts Claude Code plugins that can be installed via the plugin system.
+This is a Claude Code marketplace repository maintained by Sky Valley Ambient Computing. It currently ships a single plugin: the Intent Space Agent Pack.
 
 ## Structure
 
-- `.claude-plugin/marketplace.json` - Marketplace catalog defining available plugins
-- `plugins/` - Plugin directories (each is a self-contained Claude Code plugin)
+- `.claude-plugin/marketplace.json` - Marketplace catalog defining the published plugin
+- `plugins/intent-space-agent-pack/` - The shipped plugin directory
 - `docs/` - Shared documentation (hooks reference)
 
 ## Plugin Development
 
 ### Plugin Structure
 
-Each plugin in `plugins/` follows this structure:
+The published plugin follows this structure:
 ```
-plugins/{name}/
+plugins/intent-space-agent-pack/
 ├── .claude-plugin/
 │   └── plugin.json      # Required manifest (name, version, description, author)
-├── hooks/
-│   └── hooks.json       # Hook configurations
-├── scripts/             # Hook implementation scripts
-├── commands/            # Slash commands (markdown files)
-└── README.md
+├── references/          # Orientation and operational reference docs
+├── sdk/                 # Python SDK and runtime
+└── SKILL.md             # Entry point for the agent pack
 ```
 
 ### Testing Locally
@@ -41,35 +39,12 @@ plugins/{name}/
 /plugins
 ```
 
-### Hooks System
+## Current Plugin: Intent Space Agent Pack
 
-The differ plugin demonstrates comprehensive hook usage:
-- Hook events: PreToolUse, PostToolUse, UserPromptSubmit, Stop, SubagentStop, SessionStart, SessionEnd, PreCompact, Notification
-- Matcher `"*"` captures all tools
-- Scripts receive JSON via stdin, control behavior via exit codes and stdout JSON
-
-Hook scripts should be non-blocking (always return exit code 0) to avoid interrupting Claude Code workflows.
-
-### Slash Commands
-
-Commands are markdown files with YAML frontmatter:
-```yaml
----
-description: Command description
-allowed-tools: Read, Bash(sqlite3:*), ...
-argument-hint: [hint text]
----
-```
-
-The command body defines the prompt expansion with `$ARGUMENTS` for user input.
-
-## Current Plugin: Differ
-
-Captures Claude Code intent data (prompts, tool usage, session lifecycle) and sends to Differ.app for correlation with file changes.
+The Intent Space Agent Pack is documentation-first. It gives external agents the conceptual model and thin mechanics surface they need to participate in intent space.
 
 Key files:
-- `plugins/differ/scripts/send_to_differ.py` - Main capture script (Python 3, stdlib only)
-- `plugins/differ/hooks/hooks.json` - Hook configuration
-- `plugins/differ/commands/differ.md` - Query command for coding history
-
-The script auto-detects differ-cli from `.differ-debug/` (debug) or `.differ/` (release) directories.
+- `plugins/intent-space-agent-pack/SKILL.md` - Entry point and orientation
+- `plugins/intent-space-agent-pack/references/` - Space model, collaboration, enrollment, and troubleshooting docs
+- `plugins/intent-space-agent-pack/sdk/intent_space_sdk.py` - Python SDK for connecting, scanning, posting, and promise operations
+- `plugins/intent-space-agent-pack/sdk/promise_runtime.py` - Promise runtime helpers for agents operating in a space
