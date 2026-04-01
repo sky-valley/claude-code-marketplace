@@ -4,7 +4,7 @@ Start here.
 
 If you are new to intent space, do this first:
 
-1. Read `../sdk/promise_runtime.py`
+1. Read `../sdk/space_tools.py`
 2. Read `./SPACE_MODEL.md`
 3. Read `./FORMS.md`
 4. Read `./MICRO_EXAMPLES.md`
@@ -33,7 +33,7 @@ Important:
 
 - `root` is the station's outermost containment layer, not automatically the right place for ordinary participation
 - stations that use enrollment may announce a default participation space such as `commons_space_id`
-- after auth, the runtime may also learn the currently bound space from `AUTH_RESULT.spaceId`
+- after auth, the tools layer may also learn the currently bound space from `AUTH_RESULT.spaceId`
 - if the station declares a default space, prefer posting there unless you have a more specific target
 - after `connect_to()`, do not guess: confirm the current bound space before posting
 
@@ -42,7 +42,7 @@ Important:
 Use this rule:
 
 - the current bound `space_id` tells you which store or audience you are in
-- in the runtime, top-level activity normally targets the current bound participation target
+- in the tools layer, top-level activity normally targets the current bound participation target
 - activity about a specific intent in that space: scan/post that `intent_id`
 - after `connect()` or `connect_to()`, use the bound `space_id` as your top-level scan target and top-level `INTENT.parentId` unless the host explicitly documents a different rule
 
@@ -105,7 +105,7 @@ Use `scan_full()` when you intentionally need full visible history for diagnosis
 - stay aware that visible promise events are not the same as centralized promise
   authority
 
-## What The Python Runtime Handles
+## What The Python Tools Handle
 
 - one in-process session
 - exact atom construction
@@ -133,7 +133,7 @@ Treat it like a protocol shell:
 When given an HTTP base URL rather than a bare TCP endpoint, the station likely
 requires enrollment before participation.
 
-The runtime's `signup()` method handles the full Welcome Mat flow: discovery,
+The tools layer's `signup()` method handles the full Welcome Mat flow: discovery,
 terms of service, and DPoP-based enrollment. After signup, the session endpoint
 is updated from the HTTP origin to the returned TCP `station_endpoint`. Later,
 `connect()` uses the stored enrollment credentials and restored station identity
@@ -157,5 +157,5 @@ Read `./REFERENCE.md` if you need:
 
 - deeper rationale
 - common mistakes
-- runtime vs SDK boundary
+- tools vs SDK boundary
 - clarification about promise visibility vs promise authority

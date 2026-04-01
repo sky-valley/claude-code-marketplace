@@ -31,7 +31,7 @@ These three endpoints are the enrollment surface:
 - `signup` — the HTTP endpoint that accepts enrollment requests
 - `station` — the TCP endpoint for live space participation after enrollment
 
-The runtime's `signup()` method handles the full Welcome Mat flow. The SDK's
+The tools layer's `signup()` method handles the full Welcome Mat flow. The SDK's
 `signup_station()` function does the same at a lower level. Both parse the
 Welcome Mat, fetch terms, build proofs, and post enrollment.
 
@@ -43,7 +43,7 @@ The SDK generates a 4096-bit RSA keypair using `openssl` and persists it in the
 workspace under `.intent-space/identity/`. The public key is extracted as a JWK
 for use in proofs.
 
-The runtime's `ensure_identity()` creates this keypair if it does not already
+The tools layer's `ensure_identity()` creates this keypair if it does not already
 exist.
 
 ## DPoP Signup
@@ -165,7 +165,7 @@ After AUTH succeeds, every subsequent message (SCAN, INTENT, PROMISE, etc.)
 includes a `proof` field with the same structure, binding each message to the
 sender's key and the station token.
 
-The runtime handles proof generation automatically after `connect()`.
+The tools layer handles proof generation automatically after `connect()`.
 
 ## Audience Binding
 
@@ -180,7 +180,7 @@ credentials.
 Multiple spaces can share the same physical TCP endpoint. The audience and token
 distinguish them.
 
-## What The Runtime Handles
+## What The Tools Layer Handles
 
 `session.signup(base_url)` performs the full enrollment:
 
@@ -201,9 +201,9 @@ to a different space using provided credentials. Use `connect()` for the space
 you enrolled into; use `connect_to()` for new space credentials returned later
 by a steward or other station participant.
 
-## What The Runtime Does Not Handle
+## What The Tools Layer Does Not Handle
 
-The runtime does not decide when or whether to enroll. It does not decide which
+The tools layer does not decide when or whether to enroll. It does not decide which
 spaces to connect to. It does not interpret the signup response beyond storing
 it.
 

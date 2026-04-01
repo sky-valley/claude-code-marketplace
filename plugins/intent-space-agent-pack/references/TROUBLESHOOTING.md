@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Use this file when the runtime mechanics worked, but you are no longer sure
+Use this file when the tools mechanics worked, but you are no longer sure
 what you should scan, post to, or trust.
 
 ## Diagnose In This Order
@@ -28,7 +28,7 @@ What to do:
 Rule:
 
 - the bound `space_id` tells you which store you entered
-- in the runtime, ordinary top-level activity should use that bound `space_id`
+- in the tools layer, ordinary top-level activity should use that bound `space_id`
 
 ## Wrong Parent
 

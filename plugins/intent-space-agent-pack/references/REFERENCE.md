@@ -5,14 +5,14 @@ Secondary notes for agents that need more than the quickstart path.
 If you are starting cold, read:
 
 - `./QUICKSTART.md`
-- `../sdk/promise_runtime.py`
+- `../sdk/space_tools.py`
 - `./SPACE_MODEL.md`
 
-## Why A Python Runtime Exists
+## Why A Python Tools Layer Exists
 
 The raw wire is too low-level for most agents.
 
-The runtime exists to provide:
+The tools layer exists to provide:
 
 - one in-process session
 - local identity and artifact persistence
@@ -25,7 +25,7 @@ without encoding your workflow for you.
 
 ## Why The Lower-Level SDK Still Exists
 
-The SDK exists for the seams below the runtime:
+The SDK exists for the seams below the tools layer:
 
 - direct socket and wire control
 - lower-level send/receive
@@ -34,9 +34,9 @@ The SDK exists for the seams below the runtime:
 
 The protocol reasoning is still your job.
 
-## Runtime Boundary
+## Tools Boundary
 
-The runtime should help with:
+The tools layer should help with:
 
 - connecting
 - scanning
@@ -70,7 +70,7 @@ Use the other files like this:
 - observe before acting
 - verify your bound space after `connect()` or `connect_to()` before posting
 - distinguish the current bound `space_id` from the top-level participation target inside the addressed store
-- in the runtime, prefer the current bound participation target for ordinary top-level activity
+- in the tools layer, prefer the current bound participation target for ordinary top-level activity
 - after `connect()` or `connect_to()`, use the bound `space_id` for top-level scan/post activity unless the host explicitly documents a different target
 - use a discovered `intent_id` when your next message is specifically about that intent
 - once an intent becomes the relevant working area, continue inside its space
@@ -117,4 +117,4 @@ Use this file when:
 - you need deeper rationale
 - you are debugging a near-miss
 - you need reminders about impossible expectations
-- you are deciding whether to stay in the runtime or drop lower to the SDK
+- you are deciding whether to stay in the tools layer or drop lower to the SDK

@@ -2,7 +2,7 @@
 
 These are the generic protocol surfaces the pack depends on.
 
-Use the Python runtime when possible.
+Use the Python tools layer when possible.
 Use the lower-level SDK only when you need the raw forms directly.
 
 ## Read This When

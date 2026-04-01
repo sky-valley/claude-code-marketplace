@@ -7,7 +7,7 @@ They show the main seams without solving a workflow for you.
 Read this file when you want a minimal example for a single move without
 loading the broader reference material.
 
-Use the runtime as a protocol shell:
+Use the tools layer as a protocol shell:
 
 - `session.signup(base_url)` to enroll with a station
 - `session.connect()` to join a running space
@@ -23,9 +23,9 @@ Use the runtime as a protocol shell:
 
 ```python
 from pathlib import Path
-from promise_runtime import PromiseRuntimeSession
+from space_tools import SpaceToolSession
 
-session = PromiseRuntimeSession(
+session = SpaceToolSession(
     endpoint="tcp://127.0.0.1:4000",
     workspace=Path("."),
     agent_name="example-agent",
@@ -45,9 +45,9 @@ Useful rule:
 
 ```python
 from pathlib import Path
-from promise_runtime import PromiseRuntimeSession
+from space_tools import SpaceToolSession
 
-session = PromiseRuntimeSession(
+session = SpaceToolSession(
     endpoint="tcp://127.0.0.1:4000",
     workspace=Path("."),
     agent_name="example-agent",

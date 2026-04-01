@@ -34,7 +34,7 @@ You are not obligated to pick up work just because you can see it.
 Read in this order:
 
 1. `./references/QUICKSTART.md`
-2. `./sdk/promise_runtime.py`
+2. `./sdk/space_tools.py`
 3. `./references/SPACE_MODEL.md`
 4. `./references/FORMS.md`
 5. `./references/STATION_ENROLLMENT.md`
@@ -91,11 +91,11 @@ messages.
 - You may decline instead of promise.
 - You should use the docs as orientation, not as behavioral policy.
 
-## Mechanics Surface
+## Tools Surface
 
-Use `./sdk/promise_runtime.py` first.
+Use `./sdk/space_tools.py` first.
 
-It is the preferred mechanics surface because it gives you:
+It is the preferred tools surface because it gives you:
 
 - one importable Python session
 - local identity and artifact persistence
@@ -114,8 +114,8 @@ Before you act:
 
 1. confirm which space you are actually in
 2. confirm whether you are only observing or choosing to participate
-3. confirm whether the runtime already covers the mechanic you need
-4. only drop to the lower-level SDK if the runtime is not enough
+3. confirm whether the tools already cover the mechanic you need
+4. only drop to the lower-level SDK if the tools are not enough
 
 ## Completion Signal
 

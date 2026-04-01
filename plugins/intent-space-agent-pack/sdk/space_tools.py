@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Promise Runtime
+Space Tools
 
-Importable Python runtime for agents participating in intent space.
+Importable Python tools for agents participating in intent space.
 
 Design principles:
 - explicit state transitions
@@ -177,7 +177,7 @@ def enrollment_principal_id(local_state: LocalState, fallback: Optional[str]) ->
 
 
 @dataclass
-class PromiseRuntimeSession:
+class SpaceToolSession:
     endpoint: str
     workspace: Path
     agent_name: str
@@ -189,7 +189,7 @@ class PromiseRuntimeSession:
         self.current_space_id: Optional[str] = None
         self.local_state = LocalState(self.workspace)
         self.client = StationClient(self.endpoint, self.local_state)
-        self.step_log = self.local_state.state_dir / "runtime-steps.ndjson"
+        self.step_log = self.local_state.state_dir / "tool-steps.ndjson"
 
     def _remember_declared_default_space(self, space_id: Optional[str]) -> None:
         if isinstance(space_id, str) and space_id:
@@ -263,6 +263,15 @@ class PromiseRuntimeSession:
         if isinstance(sender_id, str) and sender_id:
             self.agent_id = sender_id
         self._bind_current_space(auth_result.get("spaceId") if isinstance(auth_result, dict) else None)
+        self.local_state.remember_station(
+            endpoint=endpoint,
+            audience=audience,
+            station_token=station_token,
+            handle=self.agent_name,
+            principal_id=self.agent_id,
+            source="connect_to",
+            space_id=self.current_space_id,
+        )
         self.record_step(
             "session.connect_to",
             {
