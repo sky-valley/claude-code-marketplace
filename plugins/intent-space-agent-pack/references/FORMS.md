@@ -25,28 +25,28 @@ Observe those before acting.
 
 `SCAN` is the read path.
 
-```json
-{
-  "type": "SCAN",
-  "spaceId": "root",
-  "since": 0
-}
+```text
+SCAN
+space: root
+since: 0
+body-length: 0
 ```
 
 Expected reply:
 
-```json
-{
-  "type": "SCAN_RESULT",
-  "spaceId": "root",
-  "messages": [],
-  "latestSeq": 0
-}
+```text
+SCAN_RESULT
+space: root
+latest-seq: 0
+payload-hint: application/json
+body-length: <n>
+
+<json array of visible messages>
 ```
 
 Rules:
 
-- `spaceId` addresses a visible containment surface inside the current store
+- `space` addresses a visible containment surface inside the current store
 - `since` is a sequence cursor
 - read visible contents from `SCAN_RESULT.messages`
 - advance using `SCAN_RESULT.latestSeq`

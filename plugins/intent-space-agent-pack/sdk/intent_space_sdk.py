@@ -10,7 +10,7 @@ This module helps with:
 - station token storage
 - TCP connection management
 - station AUTH plus per-message proof generation
-- compact NDJSON send/receive
+- verb-header-body framed send/receive
 - SCAN requests and cursor persistence
 - ITP atom construction
 - transcript persistence
@@ -36,39 +36,206 @@ from urllib.request import Request, urlopen
 JsonDict = Dict[str, Any]
 PROOF_TYP = "itp-pop+jwt"
 STATION_TOKEN_TYP = "itp+jwt"
+HEADER_TERMINATOR = b"\n\n"
 
 
 def compact_json(payload: JsonDict) -> str:
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=True)
 
 
-def stable_json(value: Any) -> str:
-    if isinstance(value, dict):
-        items = [f"{json.dumps(key)}:{stable_json(value[key])}" for key in sorted(value.keys())]
-        return "{" + ",".join(items) + "}"
-    if isinstance(value, list):
-        return "[" + ",".join(stable_json(item) for item in value) + "]"
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+def _with_optional(headers: Dict[str, Optional[str]]) -> Dict[str, str]:
+    return {key: value for key, value in headers.items() if value is not None}
 
 
-def canonical_request(value: Any) -> str:
-    if not isinstance(value, dict):
-        return stable_json(value)
-    if value.get("type") == "AUTH":
-        return "AUTH"
-    if value.get("type") == "SCAN":
-        return f"SCAN|{value.get('spaceId', '')}|{value.get('since', 0)}"
-    return "|".join(
-        [
-            str(value.get("type", "")),
-            str(value.get("senderId", "")),
-            str(value.get("parentId", "")),
-            str(value.get("intentId", "")),
-            str(value.get("promiseId", "")),
-            str(value.get("timestamp", "")),
-            stable_json(value.get("payload", {})),
-        ]
+def _serialize_frame(*, verb: str, headers: Dict[str, str], body: bytes) -> bytes:
+    header_lines = [verb]
+    framed_headers = dict(headers)
+    framed_headers["body-length"] = str(len(body))
+    for name, value in framed_headers.items():
+        header_lines.append(f"{name}: {value}")
+    header_blob = ("\n".join(header_lines) + "\n\n").encode("utf-8")
+    return header_blob + body
+
+
+def _parse_frames(buffer: bytes) -> tuple[List[tuple[str, Dict[str, str], bytes]], bytes]:
+    messages: List[tuple[str, Dict[str, str], bytes]] = []
+    offset = 0
+    while offset < len(buffer):
+        header_end = buffer.find(HEADER_TERMINATOR, offset)
+        if header_end == -1:
+            break
+        header_blob = buffer[offset:header_end].decode("utf-8")
+        lines = header_blob.split("\n")
+        verb = lines[0].strip()
+        if not verb:
+            raise ValueError("Missing verb line")
+        headers: Dict[str, str] = {}
+        for raw_line in lines[1:]:
+            if not raw_line:
+                raise ValueError("Unexpected empty header line")
+            if ":" not in raw_line:
+                raise ValueError(f"Malformed header line: {raw_line}")
+            name, value = raw_line.split(":", 1)
+            name = name.strip()
+            value = value.strip()
+            if not name or any(not (ch.islower() or ch.isdigit() or ch == "-") for ch in name):
+                raise ValueError(f"Invalid header name: {name}")
+            if name in headers:
+                raise ValueError(f"Duplicate header: {name}")
+            headers[name] = value
+        body_length_raw = headers.get("body-length")
+        if body_length_raw is None:
+            raise ValueError("Missing body-length header")
+        if not body_length_raw.isdigit():
+            raise ValueError("body-length must be a decimal byte count")
+        body_length = int(body_length_raw)
+        body_start = header_end + len(HEADER_TERMINATOR)
+        body_end = body_start + body_length
+        if body_end > len(buffer):
+            break
+        messages.append((verb, headers, buffer[body_start:body_end]))
+        offset = body_end
+    return messages, buffer[offset:]
+
+
+def _frame_from_message(message: JsonDict) -> tuple[str, Dict[str, str], bytes]:
+    message_type = str(message.get("type", ""))
+    if message_type == "AUTH":
+        return (
+            "AUTH",
+            {
+                "station-token": str(message.get("stationToken", "")),
+                "proof": str(message.get("proof", "")),
+            },
+            b"",
+        )
+    if message_type == "SCAN":
+        return (
+            "SCAN",
+            _with_optional(
+                {
+                    "space": str(message.get("spaceId", "")),
+                    "since": str(message.get("since", 0)),
+                    "proof": str(message["proof"]) if "proof" in message else None,
+                }
+            ),
+            b"",
+        )
+    if message_type == "SCAN_RESULT":
+        body = json.dumps(message.get("messages", []), separators=(",", ":")).encode("utf-8")
+        return (
+            "SCAN_RESULT",
+            {
+                "space": str(message.get("spaceId", "")),
+                "latest-seq": str(message.get("latestSeq", 0)),
+                "payload-hint": "application/json",
+            },
+            body,
+        )
+    if message_type == "AUTH_RESULT":
+        return (
+            "AUTH_RESULT",
+            _with_optional(
+                {
+                    "sender": str(message.get("senderId", "")),
+                    "principal": str(message.get("principalId", "")),
+                    "space": str(message["spaceId"]) if "spaceId" in message else None,
+                    "tutorial-space": str(message["tutorialSpaceId"]) if "tutorialSpaceId" in message else None,
+                    "ritual-greeting": str(message["ritualGreeting"]) if "ritualGreeting" in message else None,
+                }
+            ),
+            b"",
+        )
+    if message_type == "ERROR":
+        return (
+            "ERROR",
+            {"payload-hint": "text/plain"},
+            str(message.get("message", "")).encode("utf-8"),
+        )
+
+    body = json.dumps(message.get("payload", {}), separators=(",", ":")).encode("utf-8")
+    headers = _with_optional(
+        {
+            "sender": str(message.get("senderId", "")),
+            "parent": str(message["parentId"]) if "parentId" in message else None,
+            "intent": str(message["intentId"]) if "intentId" in message else None,
+            "promise": str(message["promiseId"]) if "promiseId" in message else None,
+            "timestamp": str(message.get("timestamp", "")),
+            "proof": str(message["proof"]) if "proof" in message else None,
+            "seq": str(message["seq"]) if "seq" in message else None,
+            "payload-hint": "application/json",
+        }
     )
+    return message_type, headers, body
+
+
+def _message_from_frame(verb: str, headers: Dict[str, str], body: bytes) -> JsonDict:
+    if verb == "AUTH":
+        return {
+            "type": "AUTH",
+            "stationToken": headers["station-token"],
+            "proof": headers["proof"],
+        }
+    if verb == "SCAN":
+        message: JsonDict = {
+            "type": "SCAN",
+            "spaceId": headers["space"],
+            "since": int(headers.get("since", "0")),
+        }
+        if "proof" in headers:
+            message["proof"] = headers["proof"]
+        return message
+    if verb == "SCAN_RESULT":
+        return {
+            "type": "SCAN_RESULT",
+            "spaceId": headers["space"],
+            "latestSeq": int(headers["latest-seq"]),
+            "messages": json.loads(body.decode("utf-8")),
+        }
+    if verb == "AUTH_RESULT":
+        message = {
+            "type": "AUTH_RESULT",
+            "senderId": headers["sender"],
+            "principalId": headers["principal"],
+        }
+        if "space" in headers:
+            message["spaceId"] = headers["space"]
+        if "tutorial-space" in headers:
+            message["tutorialSpaceId"] = headers["tutorial-space"]
+        if "ritual-greeting" in headers:
+            message["ritualGreeting"] = headers["ritual-greeting"]
+        return message
+    if verb == "ERROR":
+        return {
+            "type": "ERROR",
+            "message": body.decode("utf-8"),
+        }
+
+    message = {
+        "type": verb,
+        "senderId": headers["sender"],
+        "timestamp": int(headers["timestamp"]),
+        "payload": json.loads(body.decode("utf-8")),
+    }
+    if "parent" in headers:
+        message["parentId"] = headers["parent"]
+    if "intent" in headers:
+        message["intentId"] = headers["intent"]
+    if "promise" in headers:
+        message["promiseId"] = headers["promise"]
+    if "proof" in headers:
+        message["proof"] = headers["proof"]
+    if "seq" in headers:
+        message["seq"] = int(headers["seq"])
+    return message
+
+
+def canonical_request_bytes(value: JsonDict) -> bytes:
+    verb, headers, body = _frame_from_message(value)
+    if "proof" in headers:
+        headers = dict(headers)
+        del headers["proof"]
+    return _serialize_frame(verb=verb, headers=headers, body=body)
 
 
 def now_ms() -> int:
@@ -156,7 +323,7 @@ class LocalState:
         self.fingerprint = self.identity_dir / "station-fingerprint.txt"
         self.config = self.config_dir / "station.json"
         self.cursors = self.state_dir / "cursors.json"
-        self.transcript = self.state_dir / "tutorial-transcript.ndjson"
+        self.transcript = self.state_dir / "tutorial-transcript.jsonl"
         self.welcome = self.state_dir / "welcome-mat.json"
         self.enrollment = self.state_dir / "station-enrollment.json"
         self.known_stations = self.state_dir / "known-stations.json"
@@ -366,7 +533,8 @@ class StationClient:
     def send(self, message: JsonDict) -> None:
         if self.sock is None:
             raise RuntimeError("client is not connected")
-        self.sock.sendall((compact_json(message) + "\n").encode("utf-8"))
+        verb, headers, body = _frame_from_message(message)
+        self.sock.sendall(_serialize_frame(verb=verb, headers=headers, body=body))
         self.local_state.append_transcript("out", message)
 
     def read_available(self, total_timeout: float = 0.5, *, update_cursors: bool = True) -> List[JsonDict]:
@@ -383,12 +551,9 @@ class StationClient:
             if not chunk:
                 break
             self.buffer += chunk
-            while b"\n" in self.buffer:
-                raw, self.buffer = self.buffer.split(b"\n", 1)
-                raw = raw.strip()
-                if not raw:
-                    continue
-                message = json.loads(raw.decode("utf-8"))
+            parsed, self.buffer = _parse_frames(self.buffer)
+            for verb, headers, body in parsed:
+                message = _message_from_frame(verb, headers, body)
                 self.local_state.append_transcript("in", message)
                 if update_cursors and message.get("type") == "SCAN_RESULT":
                     latest_seq = message.get("latestSeq")
@@ -417,7 +582,7 @@ class StationClient:
                     station_token=station_token,
                     audience=audience,
                     action="AUTH",
-                    request=request,
+                    request={**request, "stationToken": station_token},
                 ),
             }
         )
@@ -520,7 +685,7 @@ def build_station_proof(
             "iat": now_s(),
             "ath": sha256_b64url(station_token),
             "action": action,
-            "req_hash": sha256_b64url(canonical_request(request)),
+            "req_hash": sha256_b64url(canonical_request_bytes(request)),
         },
     )
 

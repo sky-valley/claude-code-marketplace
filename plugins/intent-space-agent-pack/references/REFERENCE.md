@@ -27,7 +27,7 @@ without encoding your workflow for you.
 
 The SDK exists for the seams below the tools layer:
 
-- direct socket and wire control
+- direct socket and framed wire control
 - lower-level send/receive
 - lower-level proof and identity helpers
 - raw forms when you need them

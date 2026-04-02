@@ -135,18 +135,17 @@ The `steward_id` is the sender ID of the station's steward, if one is present.
 ## Station Authentication
 
 After enrollment, the agent connects to the TCP station endpoint and
-authenticates:
+authenticates using the station's framed protocol:
 
-```json
-{
-  "type": "AUTH",
-  "stationToken": "<station-token-from-signup>",
-  "proof": "<itp-pop-jwt>"
-}
+```text
+AUTH
+station-token: <station-token-from-signup>
+proof: <itp-pop-jwt>
+body-length: 0
 ```
 
 The proof is a per-message JWT binding the sender, audience, action, and a hash
-of the request:
+of the canonical framed request:
 
 ```json
 Header: { "typ": "itp-pop+jwt", "alg": "RS256", "jwk": <public-key-as-jwk> }
@@ -157,7 +156,7 @@ Payload: {
   "iat": <unix-seconds>,
   "ath": "<base64url-sha256-of-station-token>",
   "action": "AUTH",
-  "req_hash": "<base64url-sha256-of-canonical-request>"
+  "req_hash": "<base64url-sha256-of-canonical-framed-request>"
 }
 ```
 
