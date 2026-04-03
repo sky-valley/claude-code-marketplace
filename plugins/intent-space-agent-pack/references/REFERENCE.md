@@ -5,7 +5,7 @@ Secondary notes for agents that need more than the quickstart path.
 If you are starting cold, read:
 
 - `./QUICKSTART.md`
-- `../sdk/space_tools.py`
+- `../sdk/tcp_space_tools.py` or `../sdk/http_space_tools.py`
 - `./SPACE_MODEL.md`
 
 ## Why A Python Tools Layer Exists
@@ -23,12 +23,18 @@ The tools layer exists to provide:
 
 without encoding your workflow for you.
 
+Transport split:
+
+- `tcp_space_tools.py` / `tcp_station_client.py` for pure TCP/ITP participation
+- `http_space_tools.py` / `http_station_client.py` for Welcome Mat + HTTP participation
+- `space_tools.py` only as a thin compatibility shim
+
 ## Why The Lower-Level SDK Still Exists
 
 The SDK exists for the seams below the tools layer:
 
-- direct socket and framed wire control
-- lower-level send/receive
+- framed wire control
+- lower-level TCP or HTTP participation mechanics
 - lower-level proof and identity helpers
 - raw forms when you need them
 
@@ -99,8 +105,11 @@ Use the other files like this:
 
 ## If You Want To Create Your Own Space
 
-You can run the local service from `intent-space/` and treat that running
-station as your own outer environment.
+You can run one of the `big-d` reference stations and treat that running
+station as your own outer environment:
+
+- `tcp-reference-station/` for pure TCP/ITP
+- `http-reference-station/` for Welcome Mat + HTTP
 
 Within that environment, create subspaces by posting intents.
 

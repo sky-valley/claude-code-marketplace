@@ -2,21 +2,17 @@
 """
 Intent Space SDK
 
-Thin wire-mechanics SDK for agents participating in intent space.
+Shared protocol helpers for intent-space agent mechanics.
 
-This module helps with:
-- Welcome Mat discovery and signup
-- local RSA identity generation and signing
-- station token storage
-- TCP connection management
-- station AUTH plus per-message proof generation
-- verb-header-body framed send/receive
-- SCAN requests and cursor persistence
-- ITP atom construction
-- transcript persistence
+This module is intentionally transport-neutral. It holds:
+- framed verb-header-body helpers
+- local identity and artifact persistence
+- Welcome Mat discovery and signup helpers
+- shared proof and JWT material helpers
 
-It still does not implement the dojo sequence.
-That reasoning stays with the agent.
+Transport-specific live participation lives in:
+- `tcp_station_client.py`
+- `http_station_client.py`
 """
 
 from __future__ import annotations
@@ -24,12 +20,11 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import socket
 import subprocess
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
@@ -250,13 +245,42 @@ def make_id(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4()}"
 
 
+def endpoint_scheme(endpoint: str) -> str:
+    parsed = urlparse(endpoint)
+    if not parsed.scheme:
+        raise ValueError(f"Endpoint is missing a scheme: {endpoint}")
+    return parsed.scheme
+
+
 def parse_tcp_endpoint(endpoint: str) -> tuple[str, int]:
     parsed = urlparse(endpoint)
     if parsed.scheme != "tcp":
-        raise ValueError("intent_space_sdk.py currently supports tcp://host:port endpoints only")
+        raise ValueError("TCP client requires tcp://host:port")
     if not parsed.hostname or not parsed.port:
         raise ValueError("Endpoint must include host and port, e.g. tcp://127.0.0.1:4000")
     return parsed.hostname, parsed.port
+
+
+def normalize_http_endpoint(endpoint: str) -> Dict[str, str]:
+    parsed = urlparse(endpoint)
+    if parsed.scheme not in {"http", "https"}:
+        raise ValueError("HTTP endpoint must use http:// or https://")
+    if not parsed.netloc:
+        raise ValueError("HTTP endpoint must include host")
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    path = parsed.path.rstrip("/")
+    if path == "/itp":
+        return {"origin": origin, "itp": endpoint, "scan": urljoin(origin.rstrip("/") + "/", "scan"), "stream": urljoin(origin.rstrip("/") + "/", "stream")}
+    if path == "/scan":
+        return {"origin": origin, "itp": urljoin(origin.rstrip("/") + "/", "itp"), "scan": endpoint, "stream": urljoin(origin.rstrip("/") + "/", "stream")}
+    if path == "/stream":
+        return {"origin": origin, "itp": urljoin(origin.rstrip("/") + "/", "itp"), "scan": urljoin(origin.rstrip("/") + "/", "scan"), "stream": endpoint}
+    return {
+        "origin": origin,
+        "itp": urljoin(origin.rstrip("/") + "/", "itp"),
+        "scan": urljoin(origin.rstrip("/") + "/", "scan"),
+        "stream": urljoin(origin.rstrip("/") + "/", "stream"),
+    }
 
 
 def run(cmd: List[str], stdin: Optional[bytes] = None) -> bytes:
@@ -405,15 +429,11 @@ class LocalState:
         if not self.private_key.exists():
             run(["openssl", "genrsa", "-out", str(self.private_key), "4096"])
         if not self.public_key.exists():
-            public_key_pem = run(
-                ["openssl", "rsa", "-in", str(self.private_key), "-pubout"]
-            ).decode("utf-8")
+            public_key_pem = run(["openssl", "rsa", "-in", str(self.private_key), "-pubout"]).decode("utf-8")
             self.public_key.write_text(public_key_pem)
 
         public_key_pem = self.public_key.read_text()
-        fingerprint = "SHA256:" + base64.b64encode(
-            hashlib.sha256(public_key_pem.encode("utf-8")).digest()
-        ).decode("ascii")
+        fingerprint = "SHA256:" + base64.b64encode(hashlib.sha256(public_key_pem.encode("utf-8")).digest()).decode("ascii")
         self.fingerprint.write_text(fingerprint + "\n")
 
         self.config.write_text(
@@ -426,8 +446,7 @@ class LocalState:
                     "agentName": agent_name,
                 },
                 indent=2,
-            )
-            + "\n"
+            ) + "\n"
         )
         return public_key_pem, fingerprint
 
@@ -452,11 +471,7 @@ class LocalState:
         modulus_hex = modulus_hex[2:] if modulus_hex.startswith("00") else modulus_hex
         modulus_bytes = bytes.fromhex(modulus_hex)
         exponent_bytes = exponent.to_bytes((exponent.bit_length() + 7) // 8, "big")
-        return {
-            "kty": "RSA",
-            "n": b64url_encode(modulus_bytes),
-            "e": b64url_encode(exponent_bytes),
-        }
+        return {"kty": "RSA", "n": b64url_encode(modulus_bytes), "e": b64url_encode(exponent_bytes)}
 
     def jwk_thumbprint(self) -> str:
         jwk = self.public_jwk()
@@ -464,10 +479,7 @@ class LocalState:
         return sha256_b64url(canonical)
 
     def sign_rs256(self, raw_bytes: bytes) -> bytes:
-        return run(
-            ["openssl", "dgst", "-sha256", "-sign", str(self.private_key)],
-            stdin=raw_bytes,
-        )
+        return run(["openssl", "dgst", "-sha256", "-sign", str(self.private_key)], stdin=raw_bytes)
 
     def sign_challenge(self, challenge: str) -> str:
         return base64.b64encode(self.sign_rs256(challenge.encode("utf-8"))).decode("ascii")
@@ -506,135 +518,13 @@ def parse_welcome_mat(markdown: str) -> JsonDict:
             endpoints["signup"] = line.split(": ", 1)[1].replace("POST ", "")
         elif line.startswith("- station:"):
             endpoints["station"] = line.split(": ", 1)[1]
+        elif line.startswith("- itp:"):
+            endpoints["itp"] = line.split(": ", 1)[1].replace("POST ", "")
+        elif line.startswith("- scan:"):
+            endpoints["scan"] = line.split(": ", 1)[1].replace("POST ", "")
+        elif line.startswith("- stream:"):
+            endpoints["stream"] = line.split(": ", 1)[1].replace("GET ", "")
     return {"markdown": markdown, "endpoints": endpoints}
-
-
-class StationClient:
-    def __init__(self, endpoint: str, local_state: LocalState) -> None:
-        host, port = parse_tcp_endpoint(endpoint)
-        self.endpoint = endpoint
-        self.host = host
-        self.port = port
-        self.local_state = local_state
-        self.sock: Optional[socket.socket] = None
-        self.buffer = b""
-        self.cursors = local_state.load_cursors()
-        self.auth: Optional[Dict[str, Any]] = None
-
-    def connect(self) -> None:
-        self.sock = socket.create_connection((self.host, self.port), timeout=5)
-        self.sock.settimeout(0.5)
-
-    def close(self) -> None:
-        if self.sock is not None:
-            self.sock.close()
-            self.sock = None
-
-    def send(self, message: JsonDict) -> None:
-        if self.sock is None:
-            raise RuntimeError("client is not connected")
-        verb, headers, body = _frame_from_message(message)
-        self.sock.sendall(_serialize_frame(verb=verb, headers=headers, body=body))
-        self.local_state.append_transcript("out", message)
-
-    def read_available(self, total_timeout: float = 0.5, *, update_cursors: bool = True) -> List[JsonDict]:
-        if self.sock is None:
-            raise RuntimeError("client is not connected")
-        deadline = time.time() + total_timeout
-        messages: List[JsonDict] = []
-        while time.time() < deadline:
-            try:
-                chunk = self.sock.recv(65536)
-            except socket.timeout:
-                time.sleep(0.05)
-                continue
-            if not chunk:
-                break
-            self.buffer += chunk
-            parsed, self.buffer = _parse_frames(self.buffer)
-            for verb, headers, body in parsed:
-                message = _message_from_frame(verb, headers, body)
-                self.local_state.append_transcript("in", message)
-                if update_cursors and message.get("type") == "SCAN_RESULT":
-                    latest_seq = message.get("latestSeq")
-                    space_id = message.get("spaceId")
-                    if isinstance(space_id, str) and isinstance(latest_seq, int):
-                        self.cursors[space_id] = latest_seq
-                        self.local_state.save_cursors(self.cursors)
-                messages.append(message)
-        return messages
-
-    def authenticate(self, *, sender_id: str, station_token: str, audience: str, local_state: LocalState) -> JsonDict:
-        self.auth = {
-            "senderId": sender_id,
-            "stationToken": station_token,
-            "audience": audience,
-            "localState": local_state,
-        }
-        request = {"type": "AUTH"}
-        self.send(
-            {
-                "type": "AUTH",
-                "stationToken": station_token,
-                "proof": build_station_proof(
-                    local_state,
-                    sender_id=sender_id,
-                    station_token=station_token,
-                    audience=audience,
-                    action="AUTH",
-                    request={**request, "stationToken": station_token},
-                ),
-            }
-        )
-        deadline = time.time() + 5.0
-        while time.time() < deadline:
-            for message in self.read_available(0.8):
-                if message.get("type") == "AUTH_RESULT":
-                    return message
-                if message.get("type") == "ERROR":
-                    raise RuntimeError(str(message.get("message")))
-        raise TimeoutError("timed out waiting for AUTH_RESULT")
-
-    def send_station(self, message: JsonDict) -> None:
-        if not self.auth:
-            self.send(message)
-            return
-        request = dict(message)
-        request["proof"] = build_station_proof(
-            self.auth["localState"],
-            sender_id=self.auth["senderId"],
-            station_token=self.auth["stationToken"],
-            audience=self.auth["audience"],
-            action="SCAN" if request.get("type") == "SCAN" else str(request.get("type")),
-            request={k: v for k, v in request.items() if k != "proof"},
-        )
-        self.send(request)
-
-    def scan(self, space_id: str) -> JsonDict:
-        since = self.cursors.get(space_id, 0)
-        return self.scan_from(space_id, since=since, persist_cursor=True)
-
-    def scan_from(self, space_id: str, *, since: int, persist_cursor: bool = True) -> JsonDict:
-        self.send_station({"type": "SCAN", "spaceId": space_id, "since": since})
-        deadline = time.time() + 4.0
-        while time.time() < deadline:
-            for message in self.read_available(0.8, update_cursors=persist_cursor):
-                if message.get("type") == "SCAN_RESULT" and message.get("spaceId") == space_id:
-                    return message
-                if message.get("type") == "ERROR":
-                    raise RuntimeError(str(message.get("message")))
-        raise TimeoutError(f"timed out waiting for SCAN_RESULT for {space_id}")
-
-    def post(self, message: JsonDict) -> None:
-        self.send_station(message)
-
-    def wait_for(self, predicate: Callable[[JsonDict], bool], timeout: float = 10.0) -> JsonDict:
-        deadline = time.time() + timeout
-        while time.time() < deadline:
-            for message in self.read_available(0.8):
-                if predicate(message):
-                    return message
-        raise TimeoutError("timed out waiting for matching message")
 
 
 def build_welcome_mat_access_token(
@@ -667,37 +557,14 @@ def build_dpop_signup_proof(local_state: LocalState, *, signup_url: str) -> str:
     )
 
 
-def build_station_proof(
-    local_state: LocalState,
-    *,
-    sender_id: str,
-    station_token: str,
-    audience: str,
-    action: str,
-    request: JsonDict,
-) -> str:
-    return local_state.sign_jwt(
-        {"typ": PROOF_TYP, "alg": "RS256", "jwk": local_state.public_jwk()},
-        {
-            "jti": make_id("itp-proof"),
-            "sub": sender_id,
-            "aud": audience,
-            "iat": now_s(),
-            "ath": sha256_b64url(station_token),
-            "action": action,
-            "req_hash": sha256_b64url(canonical_request_bytes(request)),
-        },
-    )
-
-
 def signup_station(
     local_state: LocalState,
     *,
-    academy_url: str,
+    service_url: str,
     handle: str,
 ) -> JsonDict:
     local_state.ensure_dirs()
-    welcome_url = urljoin(academy_url.rstrip("/") + "/", ".well-known/welcome.md")
+    welcome_url = urljoin(service_url.rstrip("/") + "/", ".well-known/welcome.md")
     welcome_markdown = fetch_text(welcome_url)
     welcome = parse_welcome_mat(welcome_markdown)
     local_state.save_welcome(welcome)
@@ -705,14 +572,14 @@ def signup_station(
     endpoints = welcome["endpoints"]
     terms_url = endpoints["terms"]
     signup_url = endpoints["signup"]
-    station_endpoint = endpoints["station"]
-    if not isinstance(terms_url, str) or not isinstance(signup_url, str) or not isinstance(station_endpoint, str):
-        raise RuntimeError("welcome.md did not expose terms, signup, and station endpoints")
+    if not isinstance(terms_url, str) or not isinstance(signup_url, str):
+        raise RuntimeError("welcome.md did not expose terms and signup endpoints")
 
     tos_text = fetch_text(terms_url)
+    service_origin = f"{urlparse(service_url).scheme}://{urlparse(service_url).netloc}"
     access_token = build_welcome_mat_access_token(
         local_state,
-        service_origin=f"{urlparse(academy_url).scheme}://{urlparse(academy_url).netloc}",
+        service_origin=service_origin,
         tos_text=tos_text,
     )
     signup_response = fetch_json(
@@ -725,10 +592,23 @@ def signup_station(
             "handle": handle,
         },
     )
-    signup_response["station_endpoint"] = signup_response.get("station_endpoint", station_endpoint)
+
+    station_endpoint = signup_response.get("station_endpoint")
+    if not isinstance(station_endpoint, str):
+        station_endpoint = endpoints.get("station")
+    if not isinstance(station_endpoint, str):
+        itp_endpoint = signup_response.get("itp_endpoint")
+        if isinstance(itp_endpoint, str):
+            station_endpoint = itp_endpoint
+    if not isinstance(station_endpoint, str):
+        station_endpoint = endpoints.get("itp")
+    if not isinstance(station_endpoint, str):
+        raise RuntimeError("signup response did not expose a live station endpoint")
+
+    signup_response["station_endpoint"] = station_endpoint
     local_state.save_enrollment(signup_response)
     local_state.remember_station(
-        endpoint=str(signup_response["station_endpoint"]),
+        endpoint=station_endpoint,
         audience=signup_response.get("station_audience") if isinstance(signup_response.get("station_audience"), str) else None,
         station_token=signup_response.get("station_token") if isinstance(signup_response.get("station_token"), str) else None,
         handle=signup_response.get("handle") if isinstance(signup_response.get("handle"), str) else handle,
@@ -737,46 +617,3 @@ def signup_station(
         space_id=signup_response.get("commons_space_id") if isinstance(signup_response.get("commons_space_id"), str) else None,
     )
     return signup_response
-
-
-def intent(
-    sender_id: str,
-    content: str,
-    *,
-    intent_id: Optional[str] = None,
-    parent_id: str = "root",
-    payload: Optional[JsonDict] = None,
-) -> JsonDict:
-    body = {"content": content, **(payload or {})}
-    return {
-        "type": "INTENT",
-        "intentId": intent_id or make_id("intent"),
-        "parentId": parent_id,
-        "senderId": sender_id,
-        "timestamp": now_ms(),
-        "payload": body,
-    }
-
-
-def accept(sender_id: str, promise_id: str, *, parent_id: str) -> JsonDict:
-    return {
-        "type": "ACCEPT",
-        "parentId": parent_id,
-        "senderId": sender_id,
-        "timestamp": now_ms(),
-        "promiseId": promise_id,
-        "payload": {},
-    }
-
-
-def assess(sender_id: str, promise_id: str, assessment_value: str, *, parent_id: str) -> JsonDict:
-    return {
-        "type": "ASSESS",
-        "parentId": parent_id,
-        "senderId": sender_id,
-        "timestamp": now_ms(),
-        "promiseId": promise_id,
-        "payload": {
-            "assessment": assessment_value,
-        },
-    }

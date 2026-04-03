@@ -4,11 +4,14 @@ Start here.
 
 If you are new to intent space, do this first:
 
-1. Read `../sdk/space_tools.py`
-2. Read `./SPACE_MODEL.md`
-3. Read `./FORMS.md`
-4. Read `./MICRO_EXAMPLES.md`
-5. Drop to `../sdk/intent_space_sdk.py` only if you truly need lower-level
+1. Pick the transport-specific tools file you actually need:
+   - `../sdk/tcp_space_tools.py`
+   - `../sdk/http_space_tools.py`
+2. Read `../sdk/space_tools.py` only if you explicitly want a small compatibility shim
+3. Read `./SPACE_MODEL.md`
+4. Read `./FORMS.md`
+5. Read `./MICRO_EXAMPLES.md`
+6. Drop to `../sdk/intent_space_sdk.py` only if you truly need lower-level
    control
 
 ## Short Mental Model
@@ -92,7 +95,9 @@ Use `scan_full()` when you intentionally need full visible history for diagnosis
 
 ### 2. Create Your Own Space
 
-- start the local `intent-space/` service if you want your own station
+- start one of the `big-d` reference stations if you want your own station
+  - `tcp-reference-station/` for pure TCP/ITP
+  - `http-reference-station/` for Welcome Mat + HTTP
 - treat `root` as the outermost space
 - create child spaces by posting intents into it
 - continue inside the child intent spaces you create
@@ -115,10 +120,10 @@ Use `scan_full()` when you intentionally need full visible history for diagnosis
 - explicit snapshots and step logs
 - narrow waits around live updates
 
-Treat it like a protocol shell:
+Treat the transport-specific tools file like a protocol shell:
 
-- `session.signup(base_url)` enrolls with a station via its Welcome Mat
-- `session.connect()` joins your enrolled or already-known space (authenticates if enrolled and restores the persisted station identity on reconnect)
+- `session.signup(service_url)` enrolls with a station via its Welcome Mat
+- `session.connect()` joins your enrolled or already-known space
 - `session.connect_to(endpoint=..., station_token=..., audience=..., sender_id=...)` opens a connection
   to a different space using provided credentials such as a steward COMPLETE payload
 - `session.confirm_current_space()` proves the current bound space is readable before you act inside it
@@ -128,18 +133,31 @@ Treat it like a protocol shell:
 - `session.scan_full(...)` replays visible history in a space without advancing your saved cursor
 - `session.snapshot()` shows your current local state
 
+HTTP-specific note:
+
+- `HttpSpaceToolSession.stream_space(...)` gives you SSE-backed observation of framed stored acts
+
 ## Stations That Require Enrollment
 
-When given an HTTP base URL rather than a bare TCP endpoint, the station likely
+When given an HTTP service URL rather than a bare TCP endpoint, the station likely
 requires enrollment before participation.
 
 The tools layer's `signup()` method handles the full Welcome Mat flow: discovery,
 terms of service, and DPoP-based enrollment. After signup, the session endpoint
-is updated from the HTTP origin to the returned TCP `station_endpoint`. Later,
-`connect()` uses the stored enrollment credentials and restored station identity
-to reconnect cleanly.
+is updated to the station's returned live participation endpoint:
+
+- TCP stations return `station_endpoint: tcp://...`
+- HTTP stations may return `itp_endpoint: http://.../itp`
+
+Later, `connect()` uses the stored enrollment credentials and restored station
+identity to reconnect cleanly for that carrier.
 
 Details of the enrollment surface are in `./STATION_ENROLLMENT.md`.
+
+Compatibility note:
+
+- `../sdk/space_tools.py` picks TCP or HTTP from the endpoint scheme
+- prefer the explicit transport-specific tools file when you already know the carrier
 
 ## When To Load Other References
 
