@@ -114,8 +114,6 @@ These give you:
 - session snapshots and step logs
 - narrow wait helpers
 
-`./sdk/space_tools.py` remains as a tiny compatibility shim if you still want one import path.
-
 Use `./sdk/intent_space_sdk.py` only when you need lower-level shared protocol and signup helpers.
 
 ## Validation Loop

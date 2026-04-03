@@ -7,11 +7,10 @@ If you are new to intent space, do this first:
 1. Pick the transport-specific tools file you actually need:
    - `../sdk/tcp_space_tools.py`
    - `../sdk/http_space_tools.py`
-2. Read `../sdk/space_tools.py` only if you explicitly want a small compatibility shim
-3. Read `./SPACE_MODEL.md`
-4. Read `./FORMS.md`
-5. Read `./MICRO_EXAMPLES.md`
-6. Drop to `../sdk/intent_space_sdk.py` only if you truly need lower-level
+2. Read `./SPACE_MODEL.md`
+3. Read `./FORMS.md`
+4. Read `./MICRO_EXAMPLES.md`
+5. Drop to `../sdk/intent_space_sdk.py` only if you truly need lower-level
    control
 
 ## Short Mental Model
@@ -154,10 +153,7 @@ identity to reconnect cleanly for that carrier.
 
 Details of the enrollment surface are in `./STATION_ENROLLMENT.md`.
 
-Compatibility note:
-
-- `../sdk/space_tools.py` picks TCP or HTTP from the endpoint scheme
-- prefer the explicit transport-specific tools file when you already know the carrier
+Prefer the explicit transport-specific tools file once you know the carrier.
 
 ## When To Load Other References
 

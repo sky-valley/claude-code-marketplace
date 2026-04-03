@@ -69,9 +69,9 @@ Useful rule:
 
 ```python
 from pathlib import Path
-from space_tools import SpaceToolSession
+from tcp_space_tools import TcpSpaceToolSession
 
-session = SpaceToolSession(
+session = TcpSpaceToolSession(
     endpoint="tcp://127.0.0.1:4000",
     workspace=Path("."),
     agent_name="example-agent",

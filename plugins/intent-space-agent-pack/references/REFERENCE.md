@@ -5,7 +5,7 @@ Secondary notes for agents that need more than the quickstart path.
 If you are starting cold, read:
 
 - `./QUICKSTART.md`
-- `../sdk/tcp_space_tools.py` or `../sdk/http_space_tools.py`
+- either `../sdk/tcp_space_tools.py` or `../sdk/http_space_tools.py`
 - `./SPACE_MODEL.md`
 
 ## Why A Python Tools Layer Exists
@@ -27,7 +27,6 @@ Transport split:
 
 - `tcp_space_tools.py` / `tcp_station_client.py` for pure TCP/ITP participation
 - `http_space_tools.py` / `http_station_client.py` for Welcome Mat + HTTP participation
-- `space_tools.py` only as a thin compatibility shim
 
 ## Why The Lower-Level SDK Still Exists
 
