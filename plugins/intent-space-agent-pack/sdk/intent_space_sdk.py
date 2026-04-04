@@ -269,17 +269,25 @@ def normalize_http_endpoint(endpoint: str) -> Dict[str, str]:
         raise ValueError("HTTP endpoint must include host")
     origin = f"{parsed.scheme}://{parsed.netloc}"
     path = parsed.path.rstrip("/")
-    if path == "/itp":
-        return {"origin": origin, "itp": endpoint, "scan": urljoin(origin.rstrip("/") + "/", "scan"), "stream": urljoin(origin.rstrip("/") + "/", "stream")}
-    if path == "/scan":
-        return {"origin": origin, "itp": urljoin(origin.rstrip("/") + "/", "itp"), "scan": endpoint, "stream": urljoin(origin.rstrip("/") + "/", "stream")}
-    if path == "/stream":
-        return {"origin": origin, "itp": urljoin(origin.rstrip("/") + "/", "itp"), "scan": urljoin(origin.rstrip("/") + "/", "scan"), "stream": endpoint}
+    base_path = path
+    for suffix in ("/itp", "/scan", "/stream"):
+        if base_path.endswith(suffix):
+            base_path = base_path[: -len(suffix)]
+            break
+    if not base_path:
+        base_path = ""
+    base_url = f"{origin}{base_path}/"
+    if path.endswith("/itp"):
+        return {"origin": origin, "itp": endpoint, "scan": urljoin(base_url, "scan"), "stream": urljoin(base_url, "stream")}
+    if path.endswith("/scan"):
+        return {"origin": origin, "itp": urljoin(base_url, "itp"), "scan": endpoint, "stream": urljoin(base_url, "stream")}
+    if path.endswith("/stream"):
+        return {"origin": origin, "itp": urljoin(base_url, "itp"), "scan": urljoin(base_url, "scan"), "stream": endpoint}
     return {
         "origin": origin,
-        "itp": urljoin(origin.rstrip("/") + "/", "itp"),
-        "scan": urljoin(origin.rstrip("/") + "/", "scan"),
-        "stream": urljoin(origin.rstrip("/") + "/", "stream"),
+        "itp": urljoin(base_url, "itp"),
+        "scan": urljoin(base_url, "scan"),
+        "stream": urljoin(base_url, "stream"),
     }
 
 
