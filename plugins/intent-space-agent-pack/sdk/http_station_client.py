@@ -89,20 +89,31 @@ class HttpStationClient:
         return reply
 
     def authenticate(self, *, sender_id: str, station_token: str, audience: str, local_state: LocalState) -> JsonDict:
+        enrollment = local_state.load_enrollment()
+        initial_space_id: Optional[str] = None
+        if isinstance(enrollment, dict):
+            if isinstance(enrollment.get("space_id"), str):
+                initial_space_id = enrollment["space_id"]
+            elif isinstance(enrollment.get("commons_space_id"), str):
+                initial_space_id = enrollment["commons_space_id"]
+        if not isinstance(initial_space_id, str) or not initial_space_id:
+            initial_space_id = "root"
         self.auth = {
             "senderId": sender_id,
             "principalId": sender_id,
             "stationToken": station_token,
             "audience": audience,
             "localState": local_state,
-            "spaceId": "root",
+            "spaceId": initial_space_id,
         }
-        scan_result = self.scan_from("root", since=0, persist_cursor=False)
+        scan_result = self.scan_from(initial_space_id, since=0, persist_cursor=False)
+        if isinstance(scan_result.get("spaceId"), str):
+            self.auth["spaceId"] = scan_result["spaceId"]
         return {
             "type": "AUTH_RESULT",
             "senderId": sender_id,
             "principalId": sender_id,
-            "spaceId": scan_result.get("spaceId", "root"),
+            "spaceId": scan_result.get("spaceId", initial_space_id),
         }
 
     def send_station(self, message: JsonDict) -> None:
@@ -140,8 +151,6 @@ class HttpStationClient:
                 spaces.append(candidate)
         if self.auth and isinstance(self.auth.get("spaceId"), str) and self.auth["spaceId"] not in spaces:
             spaces.insert(0, self.auth["spaceId"])
-        if "root" not in spaces:
-            spaces.insert(0, "root")
 
         while time.time() < deadline:
             found_any = False

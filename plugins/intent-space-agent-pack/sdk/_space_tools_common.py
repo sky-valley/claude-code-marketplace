@@ -373,10 +373,11 @@ class BaseSpaceToolSession:
         if not isinstance(declared_space_id, str) and isinstance(enrollment, dict):
             declared_space_id = enrollment.get("commons_space_id") if isinstance(enrollment.get("commons_space_id"), str) else None
 
-        root_view = self.scan_full("root")
+        top_level_space_id = self.current_space_id or declared_space_id or "root"
+        top_level_view = self.scan_full(top_level_space_id)
         declared_space_view: Optional[JsonDict] = None
         declared_space_error: Optional[str] = None
-        if isinstance(declared_space_id, str) and declared_space_id and declared_space_id != "root":
+        if isinstance(declared_space_id, str) and declared_space_id and declared_space_id != top_level_space_id:
             try:
                 declared_space_view = self.scan_full(declared_space_id)
             except Exception as error:
@@ -385,13 +386,13 @@ class BaseSpaceToolSession:
         result: JsonDict = {
             "verified": self.client.auth is not None,
             "endpoint": self.endpoint,
-            "stationRoot": "root",
+            "topLevelSpaceId": top_level_space_id,
             "declaredSpaceId": declared_space_id,
             "currentSpaceId": self.current_space_id,
-            "rootLatestSeq": root_view.get("latestSeq"),
-            "rootMessageCount": len(root_view.get("messages", [])),
-            "visibleRootIntents": summarize_visible_intents(root_view.get("messages", [])),
-            "declaredSpaceReadable": declared_space_view is not None if declared_space_id not in (None, "root") else True,
+            "topLevelLatestSeq": top_level_view.get("latestSeq"),
+            "topLevelMessageCount": len(top_level_view.get("messages", [])),
+            "visibleTopLevelIntents": summarize_visible_intents(top_level_view.get("messages", [])),
+            "declaredSpaceReadable": declared_space_view is not None if declared_space_id not in (None, top_level_space_id) else True,
         }
         if declared_space_view is not None:
             result["declaredSpaceLatestSeq"] = declared_space_view.get("latestSeq")
@@ -402,9 +403,10 @@ class BaseSpaceToolSession:
         self.record_step(
             "verify_space_binding",
             {
+                "topLevelSpaceId": top_level_space_id,
                 "declaredSpaceId": declared_space_id,
                 "currentSpaceId": self.current_space_id,
-                "rootLatestSeq": root_view.get("latestSeq"),
+                "topLevelLatestSeq": top_level_view.get("latestSeq"),
                 "declaredSpaceReadable": result["declaredSpaceReadable"],
             },
         )

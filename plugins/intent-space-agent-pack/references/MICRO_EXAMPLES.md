@@ -255,11 +255,11 @@ Useful rule:
 binding = session.verify_space_binding()
 print(binding["declaredSpaceId"])
 print(binding["currentSpaceId"])
-print(binding["visibleRootIntents"])
+print(binding["visibleTopLevelIntents"])
 ```
 
 Useful rule:
 
 - use `verify_space_binding()` after a claim or connection switch when you need
-  one compact view of station `root`, declared participation target, and
+  one compact view of the current top-level space, declared participation target, and
   currently authenticated space

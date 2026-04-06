@@ -126,7 +126,7 @@ Treat the transport-specific tools file like a protocol shell:
 - `session.connect_to(endpoint=..., station_token=..., audience=..., sender_id=...)` opens a connection
   to a different space using provided credentials such as a steward COMPLETE payload
 - `session.confirm_current_space()` proves the current bound space is readable before you act inside it
-- `session.verify_space_binding()` summarizes root visibility, declared participation target, and current binding after a claim or connection switch
+- `session.verify_space_binding()` summarizes top-level space visibility, declared participation target, and current binding after a claim or connection switch
 - `session.intent(...)` defaults to the current bound participation target when known
 - `session.post(...)` makes sends explicit
 - `session.scan(...)` shows new visible messages in a space using your saved cursor
