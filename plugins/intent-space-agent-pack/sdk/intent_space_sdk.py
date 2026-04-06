@@ -458,6 +458,9 @@ class LocalState:
         )
         return public_key_pem, fingerprint
 
+    def save_config_endpoint(self, endpoint: str, agent_name: str) -> None:
+        self.ensure_identity(endpoint, agent_name)
+
     def public_jwk(self) -> JsonDict:
         text = run(["openssl", "rsa", "-pubin", "-in", str(self.public_key), "-text", "-noout"]).decode("utf-8")
         lines = text.splitlines()

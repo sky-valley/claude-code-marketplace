@@ -178,8 +178,14 @@ class BaseSpaceToolSession:
         return self.local_state.ensure_identity(self.endpoint, self.agent_name)
 
     def connect(self) -> None:
-        self.client.connect()
         enrollment = self.local_state.load_enrollment()
+        if isinstance(enrollment, dict):
+            station_endpoint = enrollment.get("station_endpoint")
+            if isinstance(station_endpoint, str) and station_endpoint and station_endpoint != self.endpoint:
+                self.endpoint = station_endpoint
+                self.client = self.build_client(self.endpoint, self.local_state)
+                self.local_state.save_config_endpoint(self.endpoint, self.agent_name)
+        self.client.connect()
         if isinstance(enrollment, dict):
             station_token = enrollment.get("station_token")
             audience = enrollment.get("station_audience")
@@ -368,6 +374,7 @@ class BaseSpaceToolSession:
         if isinstance(result.get("station_endpoint"), str):
             self.endpoint = result["station_endpoint"]
             self.client = self.build_client(self.endpoint, self.local_state)
+            self.local_state.save_config_endpoint(self.endpoint, self.agent_name)
         default_space_id = result.get("commons_space_id") if isinstance(result.get("commons_space_id"), str) else None
         if not isinstance(default_space_id, str):
             default_space_id = result.get("space_id") if isinstance(result.get("space_id"), str) else None
