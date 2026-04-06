@@ -518,6 +518,12 @@ class BaseSpaceToolSession:
 
     def wait_or_scan(self, space_id: str, predicate: Callable[[JsonDict], bool], *, wait_seconds: float, scan_attempts: int = 1) -> JsonDict:
         self.record_step("wait_or_scan.start", {"spaceId": space_id, "waitSeconds": wait_seconds, "scanAttempts": scan_attempts})
+        initial = self.scan_full(space_id)
+        self.record_step("wait_or_scan.initial_scan_full", {"spaceId": space_id, "messageCount": len(initial.get("messages", [])), "latestSeq": initial.get("latestSeq")})
+        initial_match = find_first(initial.get("messages", []), predicate)
+        if initial_match is not None:
+            self.record_step("wait_or_scan.initial_match", {"spaceId": space_id, "messageType": initial_match.get("type"), "senderId": initial_match.get("senderId")})
+            return initial_match
         deadline = time.time() + wait_seconds
         while time.time() < deadline:
             remaining = deadline - time.time()
