@@ -315,7 +315,14 @@ class BaseSpaceToolSession:
         while time.time() < deadline:
             scan_result = self.scan(space_id)
             for candidate in scan_result.get("messages", []):
-                if candidate.get("intentId") == message_id or candidate.get("promiseId") == message_id:
+                if (
+                    candidate.get("type") == posted.get("type")
+                    and candidate.get("parentId") == posted.get("parentId")
+                    and (
+                        candidate.get("intentId") == message_id
+                        or candidate.get("promiseId") == message_id
+                    )
+                ):
                     self.record_step(
                         "post_and_confirm.confirmed",
                         {"spaceId": space_id, "messageId": message_id, "messageType": candidate.get("type")},
