@@ -134,6 +134,23 @@ def find_first(messages: List[JsonDict], predicate: Callable[[JsonDict], bool]) 
     return None
 
 
+def summarize_visible_intents(messages: List[JsonDict]) -> List[JsonDict]:
+    summaries: List[JsonDict] = []
+    for message in messages:
+        if message.get("type") != "INTENT":
+            continue
+        payload = message.get("payload") if isinstance(message.get("payload"), dict) else {}
+        summaries.append(
+            {
+                "intentId": message.get("intentId"),
+                "parentId": message.get("parentId"),
+                "senderId": message.get("senderId"),
+                "content": payload.get("content"),
+            }
+        )
+    return summaries
+
+
 def enrollment_handle(local_state: LocalState) -> Optional[str]:
     enrollment = local_state.load_enrollment()
     if isinstance(enrollment, dict) and isinstance(enrollment.get("handle"), str):
@@ -347,6 +364,51 @@ class BaseSpaceToolSession:
         scan_result = self.scan(self.current_space_id)
         self.record_step("confirm_current_space", {"spaceId": self.current_space_id, "messageCount": len(scan_result.get("messages", [])), "latestSeq": scan_result.get("latestSeq")})
         return scan_result
+
+    def verify_space_binding(self) -> JsonDict:
+        enrollment = self.local_state.load_enrollment()
+        declared_space_id: Optional[str] = self.declared_default_space_id
+        if not isinstance(declared_space_id, str) and isinstance(enrollment, dict):
+            declared_space_id = enrollment.get("space_id") if isinstance(enrollment.get("space_id"), str) else None
+        if not isinstance(declared_space_id, str) and isinstance(enrollment, dict):
+            declared_space_id = enrollment.get("commons_space_id") if isinstance(enrollment.get("commons_space_id"), str) else None
+
+        root_view = self.scan_full("root")
+        declared_space_view: Optional[JsonDict] = None
+        declared_space_error: Optional[str] = None
+        if isinstance(declared_space_id, str) and declared_space_id and declared_space_id != "root":
+            try:
+                declared_space_view = self.scan_full(declared_space_id)
+            except Exception as error:
+                declared_space_error = str(error)
+
+        result: JsonDict = {
+            "verified": self.client.auth is not None,
+            "endpoint": self.endpoint,
+            "stationRoot": "root",
+            "declaredSpaceId": declared_space_id,
+            "currentSpaceId": self.current_space_id,
+            "rootLatestSeq": root_view.get("latestSeq"),
+            "rootMessageCount": len(root_view.get("messages", [])),
+            "visibleRootIntents": summarize_visible_intents(root_view.get("messages", [])),
+            "declaredSpaceReadable": declared_space_view is not None if declared_space_id not in (None, "root") else True,
+        }
+        if declared_space_view is not None:
+            result["declaredSpaceLatestSeq"] = declared_space_view.get("latestSeq")
+            result["declaredSpaceMessageCount"] = len(declared_space_view.get("messages", []))
+            result["visibleDeclaredSpaceIntents"] = summarize_visible_intents(declared_space_view.get("messages", []))
+        if declared_space_error is not None:
+            result["declaredSpaceError"] = declared_space_error
+        self.record_step(
+            "verify_space_binding",
+            {
+                "declaredSpaceId": declared_space_id,
+                "currentSpaceId": self.current_space_id,
+                "rootLatestSeq": root_view.get("latestSeq"),
+                "declaredSpaceReadable": result["declaredSpaceReadable"],
+            },
+        )
+        return result
 
     def wait_for(self, predicate: Callable[[JsonDict], bool], timeout: float = 10.0) -> JsonDict:
         return self.client.wait_for(predicate, timeout=timeout)

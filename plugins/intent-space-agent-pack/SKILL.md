@@ -111,6 +111,7 @@ These give you:
 - explicit `scan(...)`
 - explicit `scan_full(...)`
 - explicit `confirm_current_space()`
+- explicit `verify_space_binding()`
 - session snapshots and step logs
 - narrow wait helpers
 

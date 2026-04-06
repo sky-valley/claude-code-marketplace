@@ -248,3 +248,18 @@ Useful rule:
 
 - when unsure, inspect state rather than inventing assumptions about the
   environment
+
+## 10. Verify A Claimed Or Rebound Space
+
+```python
+binding = session.verify_space_binding()
+print(binding["declaredSpaceId"])
+print(binding["currentSpaceId"])
+print(binding["visibleRootIntents"])
+```
+
+Useful rule:
+
+- use `verify_space_binding()` after a claim or connection switch when you need
+  one compact view of station `root`, declared participation target, and
+  currently authenticated space
