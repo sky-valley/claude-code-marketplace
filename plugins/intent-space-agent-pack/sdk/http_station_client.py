@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import time
 from typing import Any, Callable, Dict, List, Optional
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from intent_space_sdk import (
@@ -53,6 +54,16 @@ class HttpStationClient:
     def close(self) -> None:
         return None
 
+    def _target_space_id(self) -> Optional[str]:
+        target = self.surface.get("itp")
+        if not isinstance(target, str):
+            return None
+        path = urlparse(target).path.strip("/")
+        parts = path.split("/")
+        if len(parts) == 3 and parts[0] == "spaces" and parts[2] in {"itp", "scan", "stream"}:
+            return parts[1]
+        return None
+
     def _authorized_headers(self, method: str, url: str) -> Dict[str, str]:
         if not self.auth:
             raise RuntimeError("client is not authenticated")
@@ -90,11 +101,11 @@ class HttpStationClient:
 
     def authenticate(self, *, sender_id: str, station_token: str, audience: str, local_state: LocalState) -> JsonDict:
         enrollment = local_state.load_enrollment()
-        initial_space_id: Optional[str] = None
+        initial_space_id: Optional[str] = self._target_space_id()
         if isinstance(enrollment, dict):
-            if isinstance(enrollment.get("space_id"), str):
+            if not isinstance(initial_space_id, str) and isinstance(enrollment.get("space_id"), str):
                 initial_space_id = enrollment["space_id"]
-            elif isinstance(enrollment.get("commons_space_id"), str):
+            elif not isinstance(initial_space_id, str) and isinstance(enrollment.get("commons_space_id"), str):
                 initial_space_id = enrollment["commons_space_id"]
         if not isinstance(initial_space_id, str) or not initial_space_id:
             initial_space_id = "root"
