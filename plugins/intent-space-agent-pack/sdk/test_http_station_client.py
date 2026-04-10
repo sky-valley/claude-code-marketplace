@@ -4,6 +4,13 @@ from __future__ import annotations
 import unittest
 
 from http_station_client import HttpStationClient
+from intent_space_sdk import (
+    ITP_SIGNATURE_HEADER,
+    ITP_SIGNATURE_VERSION,
+    _parse_frames,
+    _serialize_frame,
+    canonical_proof_bytes,
+)
 
 
 class FakeLocalState:
@@ -62,6 +69,63 @@ class HttpStationClientAuthenticateTests(unittest.TestCase):
         self.assertEqual(result["spaceId"], "space-shared")
         self.assertIsNotNone(client.auth)
         self.assertEqual(client.auth["spaceId"], "space-shared")  # type: ignore[index]
+
+
+class CanonicalProofBytesTests(unittest.TestCase):
+    def test_canonical_proof_bytes_are_order_invariant_and_strip_proof(self) -> None:
+        body = b"{}"
+        first = canonical_proof_bytes(
+            verb="INTENT",
+            headers={
+                "sender": "agent-python",
+                "parent": "root",
+                "intent": "intent-python",
+                "timestamp": "1775701868218",
+                "proof": "proof-to-strip",
+                "payload-hint": "application/json",
+            },
+            body=body,
+        )
+        second = canonical_proof_bytes(
+            verb="INTENT",
+            headers={
+                "payload-hint": "application/json",
+                "timestamp": "1775701868218",
+                "proof": "different-proof-to-strip",
+                "intent": "intent-python",
+                "parent": "root",
+                "sender": "agent-python",
+            },
+            body=body,
+        )
+
+        text = first.decode("utf-8")
+        self.assertEqual(first, second)
+        self.assertIn(f"{ITP_SIGNATURE_HEADER}: {ITP_SIGNATURE_VERSION}", text)
+        self.assertNotIn("proof:", text)
+        self.assertEqual(text.split("\n")[-3], "body-length: 2")
+
+    def test_signed_frame_without_itp_sig_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Signed frame requires itp-sig: v1"):
+            _parse_frames(
+                b"SCAN\n"
+                b"space: root\n"
+                b"since: 0\n"
+                b"proof: stale-proof\n"
+                b"body-length: 0\n"
+                b"\n"
+            )
+
+        with self.assertRaisesRegex(ValueError, "Signed frame requires itp-sig: v1"):
+            _serialize_frame(
+                verb="SCAN",
+                headers={
+                    "space": "root",
+                    "since": "0",
+                    "proof": "stale-proof",
+                },
+                body=b"",
+            )
 
 
 if __name__ == "__main__":

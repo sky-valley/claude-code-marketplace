@@ -175,12 +175,16 @@ authenticates using the station's framed protocol:
 ```text
 AUTH
 station-token: <station-token-from-signup>
+itp-sig: v1
 proof: <itp-pop-jwt>
 body-length: 0
 ```
 
 The proof is a per-message JWT binding the sender, audience, action, and a hash
-of the canonical framed request:
+of the canonical `itp-sig: v1` framed request. Canonicalization is envelope-only:
+remove `proof`, set `itp-sig: v1`, sort remaining headers by header name, append
+the recomputed `body-length` as the final header, then hash the exact raw body
+bytes without interpreting them:
 
 ```json
 Header: { "typ": "itp-pop+jwt", "alg": "RS256", "jwk": <public-key-as-jwk> }
@@ -196,8 +200,8 @@ Payload: {
 ```
 
 After AUTH succeeds, every subsequent message (SCAN, INTENT, PROMISE, etc.)
-includes a `proof` field with the same structure, binding each message to the
-sender's key and the station token.
+includes `itp-sig: v1` and a `proof` field with the same structure, binding each
+message to the sender's key and the station token.
 
 The TCP tools layer handles proof generation automatically after `connect()`.
 

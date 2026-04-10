@@ -32,6 +32,8 @@ JsonDict = Dict[str, Any]
 PROOF_TYP = "itp-pop+jwt"
 STATION_TOKEN_TYP = "itp+jwt"
 HEADER_TERMINATOR = b"\n\n"
+ITP_SIGNATURE_HEADER = "itp-sig"
+ITP_SIGNATURE_VERSION = "v1"
 
 
 def compact_json(payload: JsonDict) -> str:
@@ -42,7 +44,39 @@ def _with_optional(headers: Dict[str, Optional[str]]) -> Dict[str, str]:
     return {key: value for key, value in headers.items() if value is not None}
 
 
+def _validate_verb(verb: str) -> None:
+    if not verb or any(not (ch.isupper() or ch == "_") for ch in verb):
+        raise ValueError(f"Invalid verb line: {verb}")
+
+
+def _validate_header_name(name: str) -> None:
+    if not name or any(not (ch.islower() or ch == "-") for ch in name):
+        raise ValueError(f"Invalid header name: {name}")
+
+
+def _validate_header_value(name: str, value: str) -> None:
+    if "\n" in value or "\r" in value or "\x00" in value:
+        raise ValueError(f"Invalid header value for {name}")
+
+
+def _assert_signature_version(headers: Dict[str, str]) -> None:
+    version = headers.get(ITP_SIGNATURE_HEADER)
+    if version is not None and version != ITP_SIGNATURE_VERSION:
+        raise ValueError(f"Unsupported {ITP_SIGNATURE_HEADER} value: {version}")
+    if "proof" in headers and version != ITP_SIGNATURE_VERSION:
+        raise ValueError(f"Signed frame requires {ITP_SIGNATURE_HEADER}: {ITP_SIGNATURE_VERSION}")
+
+
+def _validate_headers(headers: Dict[str, str]) -> None:
+    _assert_signature_version(headers)
+    for name, value in headers.items():
+        _validate_header_name(name)
+        _validate_header_value(name, value)
+
+
 def _serialize_frame(*, verb: str, headers: Dict[str, str], body: bytes) -> bytes:
+    _validate_verb(verb)
+    _validate_headers(headers)
     header_lines = [verb]
     framed_headers = dict(headers)
     framed_headers["body-length"] = str(len(body))
@@ -64,20 +98,20 @@ def _parse_frames(buffer: bytes) -> tuple[List[tuple[str, Dict[str, str], bytes]
         verb = lines[0].strip()
         if not verb:
             raise ValueError("Missing verb line")
+        _validate_verb(verb)
         headers: Dict[str, str] = {}
         for raw_line in lines[1:]:
             if not raw_line:
                 raise ValueError("Unexpected empty header line")
-            if ":" not in raw_line:
+            if ": " not in raw_line:
                 raise ValueError(f"Malformed header line: {raw_line}")
-            name, value = raw_line.split(":", 1)
-            name = name.strip()
-            value = value.strip()
-            if not name or any(not (ch.islower() or ch.isdigit() or ch == "-") for ch in name):
-                raise ValueError(f"Invalid header name: {name}")
+            name, value = raw_line.split(": ", 1)
+            _validate_header_name(name)
+            _validate_header_value(name, value)
             if name in headers:
                 raise ValueError(f"Duplicate header: {name}")
             headers[name] = value
+        _assert_signature_version(headers)
         body_length_raw = headers.get("body-length")
         if body_length_raw is None:
             raise ValueError("Missing body-length header")
@@ -100,6 +134,7 @@ def _frame_from_message(message: JsonDict) -> tuple[str, Dict[str, str], bytes]:
             "AUTH",
             {
                 "station-token": str(message.get("stationToken", "")),
+                ITP_SIGNATURE_HEADER: ITP_SIGNATURE_VERSION,
                 "proof": str(message.get("proof", "")),
             },
             b"",
@@ -111,6 +146,7 @@ def _frame_from_message(message: JsonDict) -> tuple[str, Dict[str, str], bytes]:
                 {
                     "space": str(message.get("spaceId", "")),
                     "since": str(message.get("since", 0)),
+                    ITP_SIGNATURE_HEADER: ITP_SIGNATURE_VERSION if "proof" in message else None,
                     "proof": str(message["proof"]) if "proof" in message else None,
                 }
             ),
@@ -156,6 +192,7 @@ def _frame_from_message(message: JsonDict) -> tuple[str, Dict[str, str], bytes]:
             "intent": str(message["intentId"]) if "intentId" in message else None,
             "promise": str(message["promiseId"]) if "promiseId" in message else None,
             "timestamp": str(message.get("timestamp", "")),
+            ITP_SIGNATURE_HEADER: ITP_SIGNATURE_VERSION if "proof" in message else None,
             "proof": str(message["proof"]) if "proof" in message else None,
             "seq": str(message["seq"]) if "seq" in message else None,
             "payload-hint": "application/json",
@@ -227,10 +264,22 @@ def _message_from_frame(verb: str, headers: Dict[str, str], body: bytes) -> Json
 
 def canonical_request_bytes(value: JsonDict) -> bytes:
     verb, headers, body = _frame_from_message(value)
-    if "proof" in headers:
-        headers = dict(headers)
-        del headers["proof"]
-    return _serialize_frame(verb=verb, headers=headers, body=body)
+    return canonical_proof_bytes(verb=verb, headers=headers, body=body)
+
+
+def canonical_proof_bytes(*, verb: str, headers: Dict[str, str], body: bytes) -> bytes:
+    _validate_verb(verb)
+    canonical_headers = dict(headers)
+    canonical_headers.pop("proof", None)
+    canonical_headers.pop("body-length", None)
+    canonical_headers[ITP_SIGNATURE_HEADER] = ITP_SIGNATURE_VERSION
+    _validate_headers(canonical_headers)
+    header_lines = [verb]
+    for name in sorted(canonical_headers):
+        header_lines.append(f"{name}: {canonical_headers[name]}")
+    header_lines.append(f"body-length: {len(body)}")
+    header_blob = ("\n".join(header_lines) + "\n\n").encode("utf-8")
+    return header_blob + body
 
 
 def now_ms() -> int:
