@@ -150,7 +150,7 @@ Carrier split:
 
 - TCP stations use the explicit framed `AUTH` act
 - HTTP stations use Welcome Mat-compatible HTTP auth and DPoP-shaped request auth
-- the shared materials are the same: keypair, station token, audience, proof-of-possession
+- the shared materials are the same: keypair, station-issued credential material, audience, proof-of-possession
 
 ## Impossible Expectations To Drop
 

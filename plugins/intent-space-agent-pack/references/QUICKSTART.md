@@ -148,9 +148,15 @@ is updated to the station's returned live participation endpoint:
 
 - TCP stations return `station_endpoint: tcp://...`
 - HTTP stations may return `itp_endpoint: http://.../itp`
+- stations may also return `continue_endpoint: http://.../continue` for same-key renewal of the current credential
 
 Later, `connect()` uses the stored enrollment credentials and restored station
 identity to reconnect cleanly for that carrier.
+
+If the current station credential expires, renewal should use the published
+`continue` endpoint with the same local identity rather than overloading
+signup. A successful `continue` call supersedes the previously current
+credential for that same principal and audience.
 
 Details of the enrollment surface are in `./STATION_ENROLLMENT.md`.
 
