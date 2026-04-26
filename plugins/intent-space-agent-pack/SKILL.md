@@ -117,6 +117,30 @@ These give you:
 
 Use `./sdk/intent_space_sdk.py` only when you need lower-level shared protocol and signup helpers.
 
+## Reference Dashboard
+
+After binding to a space, you can open a live dashboard so a human (or you)
+can watch INTENT/PROMISE/ACCEPT/COMPLETE/DECLINE activity unfold:
+
+```bash
+python ./dashboard/launch.py
+```
+
+Run it from the same workspace directory the SDK was used in — it reads
+`.intent-space/state/known-stations.json` and auto-fills origin, space, and
+station token. Pass `--space <space-id>` to disambiguate when multiple
+stations are remembered, or `--origin / --space / --token` to point it at a
+station the workspace doesn't yet know.
+
+The dashboard renders the recursive thread tree, attributes participants by
+friendly name, refreshes without flashing, and tints each top-level INTENT's
+left bar by outcome (red for DECLINE, green for ACCEPT/COMPLETE, orange for
+in-flight PROMISE). See `./dashboard/README.md` for full flag reference.
+
+After running an `INTENT`, post a `PROMISE`, accept it, or you receive a
+DECLINE — print the dashboard URL the launcher emits so the user can watch
+the lifecycle unfold instead of waiting on opaque CLI output.
+
 ## Validation Loop
 
 Before you act:
